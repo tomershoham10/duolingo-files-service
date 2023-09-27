@@ -34,11 +34,11 @@ const configureMiddlewares = (app: Express) => {
 };
 
 const minioClient = new Client({
-  endPoint: "minio-server", // Replace with your MinIO server hostname
+  endPoint: "server-minio-1", // Replace with your MinIO server hostname
   port: 9000, // MinIO server port
   useSSL: false, // Set to true if you want to use SSL
-  accessKey: "your-access-key", // Your MinIO access key
-  secretKey: "your-secret-key", // Your MinIO secret key
+  accessKey: "your-minio-access-key", // Your MinIO access key
+  secretKey: "your-minio-secret-key", // Your MinIO secret key
 });
 
 export { minioClient };
