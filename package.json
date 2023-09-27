@@ -1,0 +1,27 @@
+{
+  "name": "files-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build:w": "tsc -w",
+    "start": "nodemon ./dist/index.js",
+    "dev": "concurrently  \"npm:build:w\" \"npm:start\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.6.0",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@types/cors": "^2.8.14",
+    "@types/express": "^4.17.18",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "minio": "^7.1.3"
+  }
+}
