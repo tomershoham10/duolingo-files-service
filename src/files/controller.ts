@@ -5,14 +5,16 @@ import MinioManager from "./manager.js";
 export default class MinioController {
   private manager: MinioManager;
 
-  constructor(bucketName: string) {
-    this.manager = new MinioManager(bucketName);
+  constructor() {
+    this.manager = new MinioManager();
   }
 
   async uploadFile(req: Request, res: Response) {
-    const { objectName, filePath } = req.body;
+    const bucketName = req.body.bucketName;
+    const objectName = req.body.objectName;
+    const filePath = req.body.filePath;
     try {
-      await this.manager.uploadFile(objectName, filePath);
+      await this.manager.uploadFile(bucketName, objectName, filePath);
       res.status(200).json({ message: "File uploaded successfully" });
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });
@@ -20,10 +22,10 @@ export default class MinioController {
   }
 
   async getFile(req: Request, res: Response) {
-    const objectName = req.params.objectName;
+    const bucketName = req.body.bucketName;
+    const objectName = req.body.objectName;
     try {
-      const dataStream = await this.manager.getFile(objectName);
-      // You can stream the data or handle it in another way
+      const dataStream = await this.manager.getFile(bucketName, objectName);
       dataStream.pipe(res);
     } catch (error) {
       res.status(404).json({ error: "File not found" });
@@ -31,9 +33,10 @@ export default class MinioController {
   }
 
   async deleteFile(req: Request, res: Response) {
-    const objectName = req.params.objectName;
+    const bucketName = req.body.bucketName;
+    const objectName = req.body.objectName;
     try {
-      await this.manager.deleteFile(objectName);
+      await this.manager.deleteFile(bucketName, objectName);
       res.status(200).json({ message: "File deleted successfully" });
     } catch (error) {
       res.status(500).json({ error: "Internal server error" });

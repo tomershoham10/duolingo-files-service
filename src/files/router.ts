@@ -2,8 +2,7 @@ import express from "express";
 import MinioController from "./controller.js";
 
 const filesRouter = express.Router();
-const bucketName = "bucket-name";
-const controller = new MinioController(bucketName);
+const controller = new MinioController();
 
 filesRouter.post("/upload", controller.uploadFile.bind(controller));
 filesRouter.get("/download/:objectName", controller.getFile.bind(controller));

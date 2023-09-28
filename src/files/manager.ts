@@ -4,22 +4,22 @@ import { MinioRepository } from "./repository.js";
 export default class MinioManager {
   private repository: MinioRepository;
 
-  constructor(bucketName: string) {
-    this.repository = new MinioRepository(bucketName);
+  constructor() {
+    this.repository = new MinioRepository();
   }
 
-  async uploadFile(objectName: string, filePath: string) {
-    await this.repository.uploadFile(objectName, filePath);
+  async uploadFile(bucketName: string, objectName: string, filePath: string) {
+    await this.repository.uploadFile(bucketName, objectName, filePath);
   }
 
-  async getFile(objectName: string) {
-    const dataStream = await this.repository.getFile(objectName);
+  async getFile(bucketName: string, objectName: string) {
+    const dataStream = await this.repository.getFile(bucketName, objectName);
     // Perform any additional processing here if needed
     return dataStream;
   }
 
-  async deleteFile(objectName: string) {
-    await this.repository.deleteFile(objectName);
+  async deleteFile(bucketName: string, objectName: string) {
+    await this.repository.deleteFile(bucketName, objectName);
   }
 
   async createBucket(bucketName: string) {

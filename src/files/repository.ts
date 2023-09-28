@@ -1,19 +1,18 @@
 import { minioClient } from "../server.js";
 
 export class MinioRepository {
-  constructor(private bucketName: string) {}
 
-  async uploadFile(objectName: string, filePath: string) {
-    await minioClient.fPutObject(this.bucketName, objectName, filePath);
+  async uploadFile(bucketName: string, fileName: string, filePath: string) {
+    await minioClient.fPutObject(bucketName, fileName, filePath);
   }
 
-  async getFile(objectName: string) {
-    const dataStream = await minioClient.getObject(this.bucketName, objectName);
+  async getFile(bucketName: string, objectName: string) {
+    const dataStream = await minioClient.getObject(bucketName, objectName);
     return dataStream;
   }
 
-  async deleteFile(objectName: string) {
-    await minioClient.removeObject(this.bucketName, objectName);
+  async deleteFile(bucketName: string, objectName: string) {
+    await minioClient.removeObject(bucketName, objectName);
   }
 
   async createBucket(bucketName: string) {
