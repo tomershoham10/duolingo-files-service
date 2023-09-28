@@ -1,14 +1,40 @@
+// import fs from 'fs'
 import { minioClient } from "../server.js";
 
 export class MinioRepository {
 
-  async uploadFile(bucketName: string, fileName: string, filePath: string) {
-    await minioClient.fPutObject(bucketName, fileName, filePath);
+  async uploadFile(bucketName: string, objectName: string, filePath: string): Promise<string> {
+    console.log("repo", bucketName, objectName, filePath);
+    return new Promise((resolve, reject) => {
+
+      minioClient.putObject(bucketName, objectName, filePath, (err: Error | null, etag: string) => {
+        if (err) {
+          console.log(err);
+          reject('File upload failed: ' + err.message);
+        } else {
+          console.log(`File uploaded successfully ${etag}`);
+          resolve(etag);
+        }
+      })
+    })
   }
 
-  async getFile(bucketName: string, objectName: string) {
+  async getFileByName(bucketName: string, objectName: string) {
     const dataStream = await minioClient.getObject(bucketName, objectName);
     return dataStream;
+  }
+
+  getAllFilesByBucket(bucketName: string) {
+    try {
+      const objects = minioClient.listObjects(bucketName, "");
+      const fileNames = objects.map((object) => object.name);
+      console.log("files service repo - get all files by bucket", fileNames)
+
+      return fileNames;
+    } catch (error) {
+      console.error("Error listing files:", error);
+      throw error;
+    }
   }
 
   async deleteFile(bucketName: string, objectName: string) {

@@ -8,14 +8,21 @@ export default class MinioManager {
     this.repository = new MinioRepository();
   }
 
-  async uploadFile(bucketName: string, objectName: string, filePath: string) {
-    await this.repository.uploadFile(bucketName, objectName, filePath);
+  async uploadFile(bucketName: string, objectName: string, filePath: string): Promise<string> {
+    console.log("manager", bucketName, objectName, filePath);
+    const response = await this.repository.uploadFile(bucketName, objectName, filePath);
+    console.log("manager resopnse", response);
+    return response;
   }
 
-  async getFile(bucketName: string, objectName: string) {
-    const dataStream = await this.repository.getFile(bucketName, objectName);
+  async getFileByName(bucketName: string, objectName: string) {
+    const dataStream = await this.repository.getFileByName(bucketName, objectName);
     // Perform any additional processing here if needed
     return dataStream;
+  }
+
+  getAllFilesByBucket(bucketName: string) {
+    return this.repository.getAllFilesByBucket(bucketName);
   }
 
   async deleteFile(bucketName: string, objectName: string) {

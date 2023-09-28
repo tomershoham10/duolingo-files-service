@@ -13,23 +13,36 @@ export default class MinioController {
     const bucketName = req.body.bucketName;
     const objectName = req.body.objectName;
     const filePath = req.body.filePath;
-    try {
-      await this.manager.uploadFile(bucketName, objectName, filePath);
-      res.status(200).json({ message: "File uploaded successfully" });
-    } catch (error) {
-      res.status(500).json({ error: "Internal server error" });
-    }
+    console.log("files service controller - upload", bucketName, objectName, filePath);
+    this.manager.uploadFile(bucketName, objectName, filePath).then((etag) => {
+      res.status(200).json({ message: `File uploaded successfully: ${etag}` });
+    }).catch((error) => {
+      console.error('Error:', error);
+    });
   }
 
-  async getFile(req: Request, res: Response) {
+  async getFileByName(req: Request, res: Response) {
     const bucketName = req.body.bucketName;
     const objectName = req.body.objectName;
     try {
-      const dataStream = await this.manager.getFile(bucketName, objectName);
+      const dataStream = await this.manager.getFileByName(bucketName, objectName);
       dataStream.pipe(res);
     } catch (error) {
       res.status(404).json({ error: "File not found" });
     }
+  }
+
+  getAllFilesByBucket(req: Request, res: Response) {
+    const bucketName = req.body.bucketName;
+    console.log("files service controller - get all files by bucket", bucketName);
+
+    const files = this.manager.getAllFilesByBucket(bucketName);
+    console.log("files service controller - get all files by bucket", files);
+    files ?
+      res.status(200).json({ files }) :
+      res.status(500).json({ error: "Internal server error" });
+    ;
+
   }
 
   async deleteFile(req: Request, res: Response) {
