@@ -24,11 +24,19 @@ export default class MinioController {
   async getFileByName(req: Request, res: Response) {
     const bucketName = req.body.bucketName;
     const objectName = req.body.objectName;
+
     try {
-      const dataStream = await this.manager.getFileByName(bucketName, objectName);
-      dataStream.pipe(res);
+      const fileData = await this.manager.getFileByName(bucketName, objectName);
+
+      if (fileData) {
+        res.setHeader('Content-Type', 'application/octet-stream');
+
+        res.send(fileData);
+      } else {
+        res.status(404).json({ error: "File not found" });
+      }
     } catch (error) {
-      res.status(404).json({ error: "File not found" });
+      res.status(500).json({ error: "Internal server error" });
     }
   }
 

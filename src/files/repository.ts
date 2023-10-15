@@ -1,4 +1,4 @@
-// import fs from 'fs'
+import * as Minio from 'minio';
 import { minioClient } from "../server.js";
 
 export class MinioRepository {
@@ -19,9 +19,28 @@ export class MinioRepository {
     })
   }
 
-  async getFileByName(bucketName: string, objectName: string) {
-    const dataStream = await minioClient.getObject(bucketName, objectName);
-    return dataStream;
+  async getFileByName(bucketName: string, fileName: string): Promise<Buffer | null> {
+    try {
+      const fileStream = await minioClient.getObject(bucketName, fileName);
+      const data: Buffer[] = [];
+
+      return new Promise((resolve, reject) => {
+        fileStream.on('data', (chunk) => {
+          data.push(chunk);
+        });
+
+        fileStream.on('end', () => {
+          const fileData = Buffer.concat(data);
+          resolve(fileData);
+        });
+
+        fileStream.on('error', (error) => {
+          reject(error);
+        });
+      });
+    } catch (error) {
+      throw new Error(`Error getting the file: ${error}`);
+    }
   }
 
   getAllFilesByBucket(bucketName: string) {
