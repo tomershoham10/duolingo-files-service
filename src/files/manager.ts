@@ -21,8 +21,9 @@ export default class MinioManager {
     return dataStream;
   }
 
-  getAllFilesByBucket(bucketName: string) {
-    return this.repository.getAllFilesByBucket(bucketName);
+  async getAllFilesByBucket(bucketName: string) {
+    const files = await this.repository.getAllFilesByBucket(bucketName);
+    return files;
   }
 
   async deleteFile(bucketName: string, objectName: string) {

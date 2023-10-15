@@ -1,4 +1,5 @@
 import * as Minio from 'minio';
+import { Stream } from 'stream';
 import { minioClient } from "../server.js";
 
 export class MinioRepository {
@@ -43,13 +44,32 @@ export class MinioRepository {
     }
   }
 
-  getAllFilesByBucket(bucketName: string) {
-    try {
-      const objects = minioClient.listObjects(bucketName, "");
-      const fileNames = objects.map((object) => object.name);
-      console.log("files service repo - get all files by bucket", fileNames)
+  async getAllFilesByBucket(bucketName: string) {
 
-      return fileNames;
+    try {
+      const objectsStream: Stream = minioClient.listObjects(bucketName, ""); // Use the Stream type
+      const fileNames: string[] = [];
+
+      objectsStream.on('data', (object) => {
+        fileNames.push(object.name);
+      });
+
+      // Handle the end of the stream
+      objectsStream.on('end', () => {
+        console.log("files service repo - get all files by bucket", fileNames);
+      });
+
+      // Return a Promise that resolves when the stream ends
+      return new Promise((resolve, reject) => {
+        objectsStream.on('end', () => {
+          resolve(fileNames);
+        });
+
+        objectsStream.on('error', (error) => {
+          console.error("Error listing files:", error);
+          reject(error);
+        });
+      });
     } catch (error) {
       console.error("Error listing files:", error);
       throw error;
