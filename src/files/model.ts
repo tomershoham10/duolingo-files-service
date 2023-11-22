@@ -3,4 +3,5 @@ export interface FileMetadata {
   mimeType: string;
   size: number;
   createdAt: Date;
+  sourceOfFile?: string;
 }

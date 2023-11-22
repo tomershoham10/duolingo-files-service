@@ -13,8 +13,9 @@ export default class MinioController {
     const bucketName = req.body.bucketName;
     const objectName = req.body.objectName;
     const filePath = req.body.filePath;
-    console.log("files service controller - upload", bucketName, objectName, filePath);
-    this.manager.uploadFile(bucketName, objectName, filePath).then((etag) => {
+    const metadata = req.body.metadata;
+    console.log("files service controller - upload", bucketName, objectName, filePath, metadata);
+    this.manager.uploadFile(bucketName, objectName, filePath, metadata).then((etag) => {
       res.status(200).json({ message: `File uploaded successfully: ${etag}` });
     }).catch((error) => {
       console.error('Error:', error);

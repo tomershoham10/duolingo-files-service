@@ -1,22 +1,23 @@
-import * as Minio from 'minio';
 import { Stream } from 'stream';
 import { minioClient } from "../server.js";
+import { FileMetadata } from './model.js';
 
 export class MinioRepository {
-
-  async uploadFile(bucketName: string, objectName: string, filePath: string): Promise<string> {
+  async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
     console.log("repo", bucketName, objectName, filePath);
+    const size = metadata.size;
     return new Promise((resolve, reject) => {
 
-      minioClient.putObject(bucketName, objectName, filePath, (err: Error | null, etag: string) => {
+      minioClient.putObject(bucketName, objectName, filePath, size, metadata, function (err, objInfo) {
         if (err) {
           console.log(err);
           reject('File upload failed: ' + err.message);
         } else {
-          console.log(`File uploaded successfully ${etag}`);
-          resolve(etag);
+          console.log(`File uploaded successfully ${objInfo}`);
+          resolve("File uploaded successfully");
         }
       })
+
     })
   }
 
