@@ -10,16 +10,21 @@ export default class MinioController {
   }
 
   async uploadFile(req: Request, res: Response) {
-    const bucketName = req.body.bucketName;
-    const objectName = req.body.objectName;
-    const filePath = req.body.filePath;
-    const metadata = req.body.metadata;
-    console.log("files service controller - upload", bucketName, objectName, filePath, metadata);
-    this.manager.uploadFile(bucketName, objectName, filePath, metadata).then((etag) => {
-      res.status(200).json({ message: `File uploaded successfully: ${etag}` });
-    }).catch((error) => {
-      console.error('Error:', error);
-    });
+    try {
+
+      const bucketName = req.body.bucketName;
+      const objectName = req.body.objectName;
+      const filePath = req.body.filePath;
+      const metadata = req.body.metadata;
+      console.log("files service controller - upload", bucketName, objectName, filePath, metadata);
+      this.manager.uploadFile(bucketName, objectName, filePath, metadata).then((etag) => {
+        res.status(200).json({ message: `File uploaded successfully: ${etag}` });
+      }).catch((error) => {
+        console.error('Error:', error);
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
 
   async getFileByName(req: Request, res: Response) {
@@ -42,16 +47,19 @@ export default class MinioController {
   }
 
   async getAllFilesByBucket(req: Request, res: Response) {
-    const bucketName = req.body.bucketName;
-    console.log("files service controller - get all files by bucket", bucketName);
+    try {
+      const bucketName = req.body.bucketName;
+      console.log("files service controller - get all files by bucket", bucketName);
 
-    const files = await this.manager.getAllFilesByBucket(bucketName);
-    console.log("files service controller - get all files by bucket", files);
-    files ?
-      res.status(200).json({ files }) :
+      const files = await this.manager.getAllFilesByBucket(bucketName);
+      console.log("files service controller - get all files by bucket", files);
+      files ?
+        res.status(200).json({ files }) :
+        res.status(500).json({ error: "Internal server error" });
+      ;
+    } catch (error) {
       res.status(500).json({ error: "Internal server error" });
-    ;
-
+    }
   }
 
   async deleteFile(req: Request, res: Response) {
@@ -76,9 +84,9 @@ export default class MinioController {
     }
   }
 
-  async bucketsList(_req: Request, res: Response) {
+  async getBucketsList(_req: Request, res: Response) {
     try {
-      const buckets = await this.manager.bucketsList();
+      const buckets = await this.manager.getBucketsList();
       res.status(200).json({ buckets });
     } catch (error) {
       res.status(500).json({ error: "Failed to list buckets" });

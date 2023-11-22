@@ -1,24 +1,30 @@
 import { Stream } from 'stream';
 import { minioClient } from "../server.js";
 import { FileMetadata } from './model.js';
+import { BucketItemFromList } from 'minio';
 
 export class MinioRepository {
   async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
-    console.log("repo", bucketName, objectName, filePath);
-    const size = metadata.size;
-    return new Promise((resolve, reject) => {
+    try {
 
-      minioClient.putObject(bucketName, objectName, filePath, size, metadata, function (err, objInfo) {
-        if (err) {
-          console.log(err);
-          reject('File upload failed: ' + err.message);
-        } else {
-          console.log(`File uploaded successfully ${objInfo}`);
-          resolve("File uploaded successfully");
-        }
-      })
-
-    })
+      console.log("repo", bucketName, objectName, filePath);
+      const size = metadata.size;
+      const response = await new Promise<string>((resolve, reject) => {
+        minioClient.putObject(bucketName, objectName, filePath, size, metadata, function (err, objInfo) {
+          if (err) {
+            console.log(err);
+            reject('File upload failed: ' + err.message);
+          } else {
+            console.log(`File uploaded successfully ${objInfo}`);
+            resolve("File uploaded successfully");
+          }
+        });
+      });
+      return response;
+    } catch (error) {
+      console.error(`Error uploading file: ${error}`);
+      throw new Error(`Error uploding the file: ${error}`);
+    }
   }
 
   async getFileByName(bucketName: string, fileName: string): Promise<Buffer | null> {
@@ -41,12 +47,11 @@ export class MinioRepository {
         });
       });
     } catch (error) {
-      throw new Error(`Error getting the file: ${error}`);
+      throw new Error(`Error getFileByName: ${error}`);
     }
   }
 
-  async getAllFilesByBucket(bucketName: string) {
-
+  async getAllFilesByBucket(bucketName: string): Promise<string[]> {
     try {
       const objectsStream: Stream = minioClient.listObjects(bucketName, ""); // Use the Stream type
       const fileNames: string[] = [];
@@ -67,36 +72,52 @@ export class MinioRepository {
         });
 
         objectsStream.on('error', (error) => {
-          console.error("Error listing files:", error);
+          console.error("Error getAllFilesByBucket:", error);
           reject(error);
         });
       });
     } catch (error) {
-      console.error("Error listing files:", error);
+      console.error("Error getAllFilesByBucket", error);
       throw error;
     }
   }
 
-  async deleteFile(bucketName: string, objectName: string) {
-    await minioClient.removeObject(bucketName, objectName);
+  async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
+    try {
+      await minioClient.removeObject(bucketName, objectName).then(() => { return true }).catch((err) => { console.log(err); throw err; });
+      return true;
+    } catch (error) {
+      console.error("Error deleteFile", error);
+      throw error;
+    }
   }
 
-  async createBucket(bucketName: string) {
+  async createBucket(bucketName: string): Promise<string> {
     try {
-      await minioClient.makeBucket(bucketName, "");
-      console.log("Bucket created successfully:", bucketName);
+      return new Promise((resolve, reject) => {
+        minioClient.makeBucket(bucketName, function (err) {
+          if (err) {
+            console.log(err);
+            reject('File upload failed: ' + err);
+          } else {
+            console.log("bucket created successfully");
+            resolve("bucket created successfully");
+
+          }
+        })
+      })
     } catch (error) {
       console.error("Error creating bucket:", error);
       throw error;
     }
   }
 
-  async bucketsList() {
+  async getBucketsList(): Promise<BucketItemFromList[]> {
     try {
       const buckets = await minioClient.listBuckets();
       return buckets;
     } catch (error) {
-      console.error("Error listing buckets:", error);
+      console.error("Error getBucketsList:", error);
       throw error;
     }
   }

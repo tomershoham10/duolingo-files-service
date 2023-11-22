@@ -1,4 +1,5 @@
 // manager.ts
+import { BucketItemFromList } from "minio";
 import { FileMetadata } from "./model.js";
 import { MinioRepository } from "./repository.js";
 
@@ -10,32 +11,63 @@ export default class MinioManager {
   }
 
   async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
-    console.log("manager", bucketName, objectName, filePath);
-    const response = await this.repository.uploadFile(bucketName, objectName, filePath, metadata);
-    console.log("manager resopnse", response);
-    return response;
+    try {
+      console.log("manager", bucketName, objectName, filePath);
+      const response = await this.repository.uploadFile(bucketName, objectName, filePath, metadata);
+      console.log("manager resopnse", response);
+      return response;
+    } catch (error) {
+      console.error("manager - Error uploadFile:", error);
+      throw error;
+    }
+  };
+
+  async getFileByName(bucketName: string, objectName: string): Promise<Buffer | null> {
+    try {
+      const dataStream = await this.repository.getFileByName(bucketName, objectName);
+      // Perform any additional processing here if needed
+      return dataStream;
+    } catch (error) {
+      console.error("manager - Error getFileByName:", error);
+      throw error;
+    }
   }
 
-  async getFileByName(bucketName: string, objectName: string) {
-    const dataStream = await this.repository.getFileByName(bucketName, objectName);
-    // Perform any additional processing here if needed
-    return dataStream;
+  async getAllFilesByBucket(bucketName: string): Promise<string[]> {
+    try {
+      const files = await this.repository.getAllFilesByBucket(bucketName);
+      return files;
+    } catch (error) {
+      console.error("manager - Error getAllFilesByBucket:", error);
+      throw error;
+    }
   }
 
-  async getAllFilesByBucket(bucketName: string) {
-    const files = await this.repository.getAllFilesByBucket(bucketName);
-    return files;
+  async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
+    try {
+      const response = await this.repository.deleteFile(bucketName, objectName);
+      return response;
+    } catch (error) {
+      console.error("manager - Error deleteFile:", error);
+      throw error;
+    }
   }
 
-  async deleteFile(bucketName: string, objectName: string) {
-    await this.repository.deleteFile(bucketName, objectName);
+  async createBucket(bucketName: string): Promise<string> {
+    try {
+      return this.repository.createBucket(bucketName);
+    } catch (error) {
+      console.error("manager - Error createBucket:", error);
+      throw error;
+    }
   }
 
-  async createBucket(bucketName: string) {
-    return this.repository.createBucket(bucketName);
-  }
-
-  async bucketsList() {
-    return this.repository.bucketsList();
+  async getBucketsList(): Promise<BucketItemFromList[]> {
+    try {
+      return this.repository.getBucketsList();
+    } catch (error) {
+      console.error("manager - Error getBucketsList:", error);
+      throw error;
+    }
   }
 }

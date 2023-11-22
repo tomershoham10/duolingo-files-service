@@ -7,7 +7,7 @@ const controller = new MinioController();
 filesRouter
     .get("/download/:objectName", controller.getFileByName.bind(controller))
     .get("/get-files-by-bucket", controller.getAllFilesByBucket.bind(controller))
-    .get("/buckets-list", controller.bucketsList.bind(controller));
+    .get("/buckets-list", controller.getBucketsList.bind(controller));
 
 filesRouter
     .post("/upload", controller.uploadFile.bind(controller))
