@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import multer from "multer";
 import bodyParser from "body-parser";
 import router from "./router.js";
 import config from "./utils/config.js";
@@ -20,6 +21,14 @@ const startServer = () => {
 };
 
 const configureMiddlewares = (app: Express) => {
+  // const storage = multer.memoryStorage();
+  // const limits = {
+  //   fileSize: 50000000, // Adjust file size limit as needed
+  // };
+  // const upload = multer({
+  //   storage: storage,
+  //   limits: limits,
+  // });
   app.use(
     cors({
       origin: "http://localhost:3000",
@@ -27,11 +36,31 @@ const configureMiddlewares = (app: Express) => {
       exposedHeaders: ["Authorization"],
     })
   );
-  app.use(bodyParser.json());
+  app.use(bodyParser.json({ limit: '200mb' }));
+  app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(errorHandler);
+
+
+  // app.post('/api/files/upload', upload.single('file'), async (req, res, next) => {
+  //   const file = req.file;
+  //   if (!file) {
+  //     return res.status(400).json({ error: 'No file uploaded' });
+  //   }
+
+  //   try {
+  //     await minioClient.putObject('your-bucket-name', file.originalname, file.buffer, file.size);
+  //     res.status(200).json({ message: 'File uploaded successfully' });
+  //   } catch (error) {
+  //     console.error('Error uploading to Minio:', error);
+  //     res.status(500).json({ error: 'Internal server error' });
+  //   }
+  // });
 };
+
+const storage = multer.memoryStorage(); // Use memory storage for simplicity; adjust as needed
+const upload = multer({ storage: storage });
 
 const minioClient = new Client({
   endPoint: "server-minio-1", // Replace with your MinIO server hostname
@@ -41,5 +70,5 @@ const minioClient = new Client({
   secretKey: "your-minio-secret-key", // Your MinIO secret key
 });
 
-export { minioClient };
+export { minioClient, upload };
 export default startServer;

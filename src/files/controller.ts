@@ -8,24 +8,38 @@ export default class MinioController {
   constructor() {
     this.manager = new MinioManager();
   }
-
   async uploadFile(req: Request, res: Response) {
     try {
+      console.log("controller - uploadFile", req.file, "controller - uploadFile body", req.body);
+      const bucketName: string = req.body.bucketName;
+      const metadata: string = req.body.metadata;
+      const file = req.file as Express.Multer.File;
 
-      const bucketName = req.body.bucketName;
-      const objectName = req.body.objectName;
-      const filePath = req.body.filePath;
-      const metadata = req.body.metadata;
-      console.log("files service controller - upload", bucketName, objectName, filePath, metadata);
-      this.manager.uploadFile(bucketName, objectName, filePath, metadata).then((etag) => {
-        res.status(200).json({ message: `File uploaded successfully: ${etag}` });
-      }).catch((error) => {
-        console.error('Error:', error);
-      });
+      const result = await this.manager.uploadFile(bucketName, file);
+      console.log("controller - uploadFile result", result)
+
+      res.status(200).json({ success: true, message: result });
     } catch (error) {
-      res.status(500).json({ error: "Internal server error" });
+      console.error(error);
+      res.status(500).json({ success: false, message: 'Error uploading file' });
     }
   }
+  // async uploadFile(req: Request, res: Response) {
+  //   try {
+
+  //     const bucketName = req.body.bucketName;
+  //     const file = req.body.file;
+  //     const metadata = req.body.metadata;
+  //     console.log("files service controller - upload", bucketName, file, metadata);
+  //     this.manager.uploadFile(bucketName, file, metadata).then((etag) => {
+  //       res.status(200).json({ message: `File uploaded successfully: ${etag}` });
+  //     }).catch((error) => {
+  //       console.error('Error:', error);
+  //     });
+  //   } catch (error) {
+  //     res.status(500).json({ error: "Internal server error" });
+  //   }
+  // }
 
   async getFileByName(req: Request, res: Response) {
     const bucketName = req.body.bucketName;

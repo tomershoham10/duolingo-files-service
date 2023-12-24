@@ -4,28 +4,45 @@ import { FileMetadata } from './model.js';
 import { BucketItemFromList } from 'minio';
 
 export class MinioRepository {
-  async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
-    try {
 
-      console.log("repo", bucketName, objectName, filePath);
-      const size = metadata.size;
-      const response = await new Promise<string>((resolve, reject) => {
-        minioClient.putObject(bucketName, objectName, filePath, size, metadata, function (err, objInfo) {
-          if (err) {
-            console.log(err);
-            reject('File upload failed: ' + err.message);
-          } else {
-            console.log(`File uploaded successfully ${objInfo}`);
-            resolve("File uploaded successfully");
-          }
-        });
-      });
-      return response;
+  async uploadFile(bucketName: string, file: Express.Multer.File): Promise<string> {
+    try {
+      // Use Minio client to upload the file
+      const fileStream = new Stream.PassThrough();
+      fileStream.end(file.buffer);
+      console.log("repo - upload", file);
+
+      await minioClient.putObject(bucketName, file.originalname, fileStream, file.size);
+      console.log("repo - upload - success");
+      return 'File uploaded successfully';
     } catch (error) {
-      console.error(`Error uploading file: ${error}`);
-      throw new Error(`Error uploding the file: ${error}`);
+      console.error(error);
+      throw new Error('Error uploading file');
     }
-  }
+  };
+
+  // async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
+  //   try {
+
+  //     console.log("repo", bucketName, objectName, filePath);
+  //     const size = metadata.size;
+  //     const response = await new Promise<string>((resolve, reject) => {
+  //       minioClient.putObject(bucketName, objectName, filePath, size, metadata, function (err, objInfo) {
+  //         if (err) {
+  //           console.log(err);
+  //           reject('File upload failed: ' + err.message);
+  //         } else {
+  //           console.log(`File uploaded successfully ${objInfo}`);
+  //           resolve("File uploaded successfully");
+  //         }
+  //       });
+  //     });
+  //     return response;
+  //   } catch (error) {
+  //     console.error(`Error uploading file: ${error}`);
+  //     throw new Error(`Error uploding the file: ${error}`);
+  //   }
+  // }
 
   async getFileByName(bucketName: string, fileName: string): Promise<Buffer | null> {
     try {

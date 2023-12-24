@@ -10,17 +10,35 @@ export default class MinioManager {
     this.repository = new MinioRepository();
   }
 
-  async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
+  async uploadFile(bucketName: string, file: Express.Multer.File): Promise<string> {
     try {
-      console.log("manager", bucketName, objectName, filePath);
-      const response = await this.repository.uploadFile(bucketName, objectName, filePath, metadata);
-      console.log("manager resopnse", response);
-      return response;
+      console.log("manager - uploadFile");
+      const minioResult = await this.repository.uploadFile(bucketName, file);
+      console.log("manager - uploadFile result", minioResult);
+      if (minioResult) {
+        return `File uploaded successfully to Minio.`;
+      }
+      else {
+        throw new Error('Error uploading file');
+      }
+
     } catch (error) {
-      console.error("manager - Error uploadFile:", error);
-      throw error;
+      console.error(error);
+      throw new Error('Error uploading file');
     }
-  };
+  }
+
+  // async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
+  //   try {
+  //     console.log("manager", bucketName, objectName, filePath);
+  //     const response = await this.repository.uploadFile(bucketName, objectName, filePath, metadata);
+  //     console.log("manager resopnse", response);
+  //     return response;
+  //   } catch (error) {
+  //     console.error("manager - Error uploadFile:", error);
+  //     throw error;
+  //   }
+  // };
 
   async getFileByName(bucketName: string, objectName: string): Promise<Buffer | null> {
     try {
