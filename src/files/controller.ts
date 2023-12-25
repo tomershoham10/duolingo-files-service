@@ -13,13 +13,27 @@ export default class MinioController {
       console.log("controller - uploadFile", req.file, "controller - uploadFile body", req.body);
       const bucketName: string = req.body.bucketName;
       const metadata: string = req.body.metadata;
-      const file = req.file as Express.Multer.File;
+      const files: Express.Multer.File[] | Express.Multer.File | { [fieldname: string]: Express.Multer.File[]; } | undefined = req.files || req.file;
+      if (!files) {
+        return res.status(400).json({ success: false, message: 'No files provided.' });
+      }
+      if (Array.isArray(files)) {
+        // Handle multiple files
+        const uploadPromises = files.map(async (file) => {
+          return this.manager.uploadFile(bucketName, file);
+        });
 
-      const result = await this.manager.uploadFile(bucketName, file);
-      console.log("controller - uploadFile result", result)
+        const results = await Promise.all(uploadPromises);
+        console.log('controller - uploadFile - Multiple files uploaded successfully:', results);
+      } else {
+        // Handle single file
+        const result = await this.manager.uploadFile(bucketName, files);
+        console.log('controller - uploadFile - Single file uploaded successfully:', result);
+      }
 
-      res.status(200).json({ success: true, message: result });
-    } catch (error) {
+      res.status(200).json({ success: true, message: 'Files uploaded successfully.' });
+    }
+    catch (error) {
       console.error(error);
       res.status(500).json({ success: false, message: 'Error uploading file' });
     }

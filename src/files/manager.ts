@@ -10,10 +10,10 @@ export default class MinioManager {
     this.repository = new MinioRepository();
   }
 
-  async uploadFile(bucketName: string, file: Express.Multer.File): Promise<string> {
+  async uploadFile(bucketName: string, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<string> {
     try {
       console.log("manager - uploadFile");
-      const minioResult = await this.repository.uploadFile(bucketName, file);
+      const minioResult = await this.repository.uploadFile(bucketName, files);
       console.log("manager - uploadFile result", minioResult);
       if (minioResult) {
         return `File uploaded successfully to Minio.`;

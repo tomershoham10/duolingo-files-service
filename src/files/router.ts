@@ -14,7 +14,8 @@ filesRouter
     .get("/buckets-list", controller.getBucketsList.bind(controller));
 
 filesRouter
-    .post("/uploadRecord", upload.single('file'), controller.uploadFile.bind(controller))
+    .post("/uploadFile", upload.single('file'), controller.uploadFile.bind(controller))
+    .post("/uploadFilesArray", upload.array('file'), controller.uploadFile.bind(controller))
     .post("/create-bucket", controller.createBucket.bind(controller));
 
 filesRouter.delete("/delete/:objectName", controller.deleteFile.bind(controller));

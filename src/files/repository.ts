@@ -1,25 +1,82 @@
-import { Stream } from 'stream';
+import { PassThrough, Stream } from 'stream';
 import { minioClient } from "../server.js";
 import { FileMetadata } from './model.js';
-import { BucketItemFromList } from 'minio';
+import { BucketItemFromList, UploadedObjectInfo } from 'minio';
 
 export class MinioRepository {
 
-  async uploadFile(bucketName: string, file: Express.Multer.File): Promise<string> {
-    try {
-      // Use Minio client to upload the file
-      const fileStream = new Stream.PassThrough();
-      fileStream.end(file.buffer);
-      console.log("repo - upload", file);
+  async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      // Convert the PassThrough stream to Buffer
+      const chunks: Buffer[] = [];
+      fileStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+      fileStream.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        minioClient.putObject(bucketName, objectName, buffer, size, function (err, objInfo) {
+          if (err) {
+            console.error(err);
+            reject(`File upload failed: ${err.message}`);
+          } else {
+            console.log(`File uploaded successfully ${objInfo}`);
+            resolve("File uploaded successfully");
+          }
+        });
+      });
+    });
+  }
 
-      await minioClient.putObject(bucketName, file.originalname, fileStream, file.size);
-      console.log("repo - upload - success");
-      return 'File uploaded successfully';
+  async uploadFile(bucketName: string, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<string> {
+    try {
+      if (!files) {
+        throw new Error('No files provided.');
+      }
+
+      const uploadPromises: Promise<string>[] = [];
+
+      if (Array.isArray(files)) {
+        // Handle multiple files
+        for (const file of files) {
+          const fileStream = new PassThrough();
+          fileStream.end(file.buffer);
+          const uploadPromise = this.putObjectPromise(bucketName, file.originalname, fileStream, file.size);
+          uploadPromises.push(uploadPromise);
+        }
+      } else {
+        // Handle single file
+        const fileStream = new PassThrough();
+        fileStream.end(files.buffer);
+
+        const uploadPromise = this.putObjectPromise(bucketName, files.originalname as string, fileStream, files.size as number);
+        uploadPromises.push(uploadPromise);
+      }
+
+      // Wait for all uploads to complete
+      await Promise.all(uploadPromises);
+
+      console.log('repo - upload - success');
+      return 'Files uploaded successfully';
     } catch (error) {
       console.error(error);
       throw new Error('Error uploading file');
     }
   };
+
+
+  // try {
+  //   // Use Minio client to upload the file
+  //   const fileStream = new Stream.PassThrough();
+  //   fileStream.end(file.buffer);
+  //   console.log("repo - upload", file);
+
+  //   await minioClient.putObject(bucketName, file.originalname, fileStream, file.size);
+  //   console.log("repo - upload - success");
+  //   return 'File uploaded successfully';
+  // } catch (error) {
+  //   console.error(error);
+  //   throw new Error('Error uploading file');
+  // }
+
+
 
   // async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
   //   try {
