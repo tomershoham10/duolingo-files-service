@@ -25,13 +25,14 @@ export default class MinioController {
 
         const results = await Promise.all(uploadPromises);
         console.log('controller - uploadFile - Multiple files uploaded successfully:', results);
+        res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: results });
       } else {
         // Handle single file
         const result = await this.manager.uploadFile(bucketName, files);
         console.log('controller - uploadFile - Single file uploaded successfully:', result);
+        res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: result });
       }
 
-      res.status(200).json({ success: true, message: 'Files uploaded successfully.' });
     }
     catch (error) {
       console.error(error);

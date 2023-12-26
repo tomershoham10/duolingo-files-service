@@ -1,5 +1,5 @@
 // manager.ts
-import { BucketItemFromList } from "minio";
+import { BucketItemFromList, UploadedObjectInfo } from "minio";
 import { FileMetadata } from "./model.js";
 import { MinioRepository } from "./repository.js";
 
@@ -10,13 +10,13 @@ export default class MinioManager {
     this.repository = new MinioRepository();
   }
 
-  async uploadFile(bucketName: string, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<string> {
+  async uploadFile(bucketName: string, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
     try {
       console.log("manager - uploadFile");
       const minioResult = await this.repository.uploadFile(bucketName, files);
       console.log("manager - uploadFile result", minioResult);
       if (minioResult) {
-        return `File uploaded successfully to Minio.`;
+        return minioResult;
       }
       else {
         throw new Error('Error uploading file');

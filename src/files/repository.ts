@@ -5,8 +5,8 @@ import { BucketItemFromList, UploadedObjectInfo } from 'minio';
 
 export class MinioRepository {
 
-  async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
+  async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number): Promise<UploadedObjectInfo> {
+    return new Promise<UploadedObjectInfo>((resolve, reject) => {
       // Convert the PassThrough stream to Buffer
       const chunks: Buffer[] = [];
       fileStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
@@ -18,20 +18,20 @@ export class MinioRepository {
             reject(`File upload failed: ${err.message}`);
           } else {
             console.log(`File uploaded successfully ${objInfo}`);
-            resolve("File uploaded successfully");
+            resolve(objInfo);
           }
         });
       });
     });
   }
 
-  async uploadFile(bucketName: string, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<string> {
+  async uploadFile(bucketName: string, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
     try {
       if (!files) {
         throw new Error('No files provided.');
       }
 
-      const uploadPromises: Promise<string>[] = [];
+      const uploadPromises: Promise<UploadedObjectInfo>[] = [];
 
       if (Array.isArray(files)) {
         // Handle multiple files
@@ -51,10 +51,10 @@ export class MinioRepository {
       }
 
       // Wait for all uploads to complete
-      await Promise.all(uploadPromises);
+      const uploadedFiles = await Promise.all(uploadPromises);
 
-      console.log('repo - upload - success');
-      return 'Files uploaded successfully';
+      console.log('repo - upload - success', uploadedFiles);
+      return uploadedFiles;
     } catch (error) {
       console.error(error);
       throw new Error('Error uploading file');
