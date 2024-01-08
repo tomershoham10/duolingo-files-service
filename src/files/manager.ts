@@ -1,6 +1,5 @@
 // manager.ts
 import { BucketItemFromList, UploadedObjectInfo } from "minio";
-import { FileMetadata } from "./model.js";
 import { MinioRepository } from "./repository.js";
 
 export default class MinioManager {
