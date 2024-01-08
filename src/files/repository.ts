@@ -5,27 +5,34 @@ import { BucketItemFromList, UploadedObjectInfo } from 'minio';
 
 export class MinioRepository {
 
-  async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number): Promise<UploadedObjectInfo> {
-    return new Promise<UploadedObjectInfo>((resolve, reject) => {
-      // Convert the PassThrough stream to Buffer
-      const chunks: Buffer[] = [];
-      fileStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
-      fileStream.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        minioClient.putObject(bucketName, objectName, buffer, size, function (err, objInfo) {
-          if (err) {
-            console.error(err);
-            reject(`File upload failed: ${err.message}`);
-          } else {
-            console.log(`File uploaded successfully ${objInfo}`);
-            resolve(objInfo);
-          }
+  async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number, metadata: string | undefined): Promise<UploadedObjectInfo> {
+    try {
+      return new Promise<UploadedObjectInfo>((resolve, reject) => {
+        // Convert the PassThrough stream to Buffer
+        const chunks: Buffer[] = [];
+        fileStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+        fileStream.on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          console.log("repository - upload - metadata", metadata, JSON.parse(metadata ? metadata : ''))
+          minioClient.putObject(bucketName, objectName, buffer, size, JSON.parse(metadata ? metadata : ''), function (err, objInfo) {
+            if (err) {
+              console.error(err);
+              reject(`File upload failed: ${err.message}`);
+            } else {
+              console.log(`File uploaded successfully ${objInfo}`);
+              resolve(objInfo);
+            }
+          });
         });
       });
-    });
+    }
+    catch (error: any) {
+      console.error('Repository Error:', error.message);
+      throw new Error(`repo - putObjectPromise: ${error}`);
+    }
   }
 
-  async uploadFile(bucketName: string, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
+  async uploadFile(bucketName: string, metadata: string | undefined, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
     try {
       if (!files) {
         throw new Error('No files provided.');
@@ -38,7 +45,7 @@ export class MinioRepository {
         for (const file of files) {
           const fileStream = new PassThrough();
           fileStream.end(file.buffer);
-          const uploadPromise = this.putObjectPromise(bucketName, file.originalname, fileStream, file.size);
+          const uploadPromise = this.putObjectPromise(bucketName, file.originalname, fileStream, file.size, metadata);
           uploadPromises.push(uploadPromise);
         }
       } else {
@@ -46,7 +53,7 @@ export class MinioRepository {
         const fileStream = new PassThrough();
         fileStream.end(files.buffer);
 
-        const uploadPromise = this.putObjectPromise(bucketName, files.originalname as string, fileStream, files.size as number);
+        const uploadPromise = this.putObjectPromise(bucketName, files.originalname as string, fileStream, files.size as number, metadata);
         uploadPromises.push(uploadPromise);
       }
 
@@ -55,9 +62,9 @@ export class MinioRepository {
 
       console.log('repo - upload - success', uploadedFiles);
       return uploadedFiles;
-    } catch (error) {
-      console.error(error);
-      throw new Error('Error uploading file');
+    } catch (error: any) {
+      console.error('Repository Error:', error.message);
+      throw new Error(`repo - uploadFile: ${error}`);
     }
   };
 
@@ -125,24 +132,38 @@ export class MinioRepository {
     }
   }
 
-  async getAllFilesByBucket(bucketName: string): Promise<string[]> {
+  async getAllFilesByBucket(bucketName: string): Promise<{ file: string; id: string; metadata: any }[]> {
     try {
-      const objectsStream: Stream = minioClient.listObjects(bucketName, ""); // Use the Stream type
-      const fileNames: string[] = [];
+      const objectsStream: Stream = minioClient.listObjects(bucketName, "");
+      const files: { file: string; id: string; metadata: FileMetadata }[] = [];
+
+
+      const statPromises: Promise<void>[] = [];
 
       objectsStream.on('data', (object) => {
-        fileNames.push(object.name);
+        const statPromise = minioClient.statObject(bucketName, object.name)
+          .then((stat) => {
+            const metadata = stat.metaData as FileMetadata;
+            files.push({ file: object.name, id: stat.etag, metadata });
+          })
+          .catch((error) => {
+            console.error(`Error getting metadata for ${object.name}:`, error);
+            throw new Error(`Error getting metadata for ${object.name}, ${error}`);
+          });
+
+        statPromises.push(statPromise);
       });
 
-      // Handle the end of the stream
-      objectsStream.on('end', () => {
-        console.log("files service repo - get all files by bucket", fileNames);
-      });
-
-      // Return a Promise that resolves when the stream ends
       return new Promise((resolve, reject) => {
-        objectsStream.on('end', () => {
-          resolve(fileNames);
+        objectsStream.on('end', async () => {
+          try {
+            await Promise.all(statPromises); // Wait for all statObject calls to complete
+            console.log('repo - getAllFilesByBucket - files', files);
+            resolve(files);
+          } catch (error) {
+            console.error("Error getAllFilesByBucket:", error);
+            reject(error);
+          }
         });
 
         objectsStream.on('error', (error) => {
@@ -150,9 +171,27 @@ export class MinioRepository {
           reject(error);
         });
       });
-    } catch (error) {
-      console.error("Error getAllFilesByBucket", error);
-      throw error;
+      // objectsStream.on('data', async (object) => {
+      //   console.log("check", object);
+      //   const stat = await minioClient.statObject(bucketName, object.name); 
+      //   console.log("check2", stat);
+      //   files.push({ file: object, id: stat.etag, metadata: stat.metaData });
+      // });
+
+      // return new Promise((resolve, reject) => {
+      //   objectsStream.on('end', () => {
+      //     console.log('repo - getAllFilesByBucket - files', files);
+      //     resolve(files);
+      //   });
+
+      //   objectsStream.on('error', (error) => {
+      //     console.error("Error getAllFilesByBucket:", error);
+      //     reject(error);
+      //   });
+      // });
+    } catch (error: any) {
+      console.error('Repository Error:', error.message);
+      throw new Error(`repo - getAllFilesByBucket: ${error}`);
     }
   }
 
@@ -160,9 +199,9 @@ export class MinioRepository {
     try {
       await minioClient.removeObject(bucketName, objectName).then(() => { return true }).catch((err) => { console.log(err); throw err; });
       return true;
-    } catch (error) {
-      console.error("Error deleteFile", error);
-      throw error;
+    } catch (error: any) {
+      console.error('Repository Error:', error.message);
+      throw new Error(`repo - deleteFile: ${error}`);
     }
   }
 
@@ -180,9 +219,9 @@ export class MinioRepository {
           }
         })
       })
-    } catch (error) {
-      console.error("Error creating bucket:", error);
-      throw error;
+    } catch (error: any) {
+      console.error('Repository Error:', error.message);
+      throw new Error(`repo - createBucket: ${error}`);
     }
   }
 
@@ -190,9 +229,9 @@ export class MinioRepository {
     try {
       const buckets = await minioClient.listBuckets();
       return buckets;
-    } catch (error) {
-      console.error("Error getBucketsList:", error);
-      throw error;
+    } catch (error: any) {
+      console.error('Repository Error:', error.message);
+      throw new Error(`repo - getBucketsList: ${error}`);
     }
   }
 }

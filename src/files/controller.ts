@@ -17,10 +17,11 @@ export default class MinioController {
       if (!files) {
         return res.status(400).json({ success: false, message: 'No files provided.' });
       }
+
       if (Array.isArray(files)) {
         // Handle multiple files
         const uploadPromises = files.map(async (file) => {
-          return this.manager.uploadFile(bucketName, file);
+          return this.manager.uploadFile(bucketName, metadata, file);
         });
 
         const results = await Promise.all(uploadPromises);
@@ -28,15 +29,15 @@ export default class MinioController {
         res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: results });
       } else {
         // Handle single file
-        const result = await this.manager.uploadFile(bucketName, files);
+        const result = await this.manager.uploadFile(bucketName, metadata, files);
         console.log('controller - uploadFile - Single file uploaded successfully:', result);
         res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: result });
       }
 
     }
-    catch (error) {
-      console.error(error);
-      res.status(500).json({ success: false, message: 'Error uploading file' });
+    catch (error: any) {
+      console.error('Controller uploadFile Error:', error.message);
+      res.status(500).json({ error: error.message });
     }
   }
   // async uploadFile(req: Request, res: Response) {
@@ -70,8 +71,9 @@ export default class MinioController {
       } else {
         res.status(404).json({ error: "File not found" });
       }
-    } catch (error) {
-      res.status(500).json({ error: "Internal server error" });
+    } catch (error: any) {
+      console.error('Controller getFileByName Error:', error.message);
+      res.status(500).json({ error: error.message });
     }
   }
 
@@ -86,8 +88,9 @@ export default class MinioController {
         res.status(200).json({ files }) :
         res.status(500).json({ error: "Internal server error" });
       ;
-    } catch (error) {
-      res.status(500).json({ error: "Internal server error" });
+    } catch (error: any) {
+      console.error('Controller getAllFilesByBucket Error:', error.message);
+      res.status(500).json({ error: error.message });
     }
   }
 
@@ -97,8 +100,9 @@ export default class MinioController {
     try {
       await this.manager.deleteFile(bucketName, objectName);
       res.status(200).json({ message: "File deleted successfully" });
-    } catch (error) {
-      res.status(500).json({ error: "Internal server error" });
+    } catch (error: any) {
+      console.error('Controller deleteFile Error:', error.message);
+      res.status(500).json({ error: error.message });
     }
   }
 
@@ -108,8 +112,9 @@ export default class MinioController {
     try {
       await this.manager.createBucket(bucketName);
       res.status(201).json({ message: "Bucket created successfully" });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create bucket" });
+    } catch (error: any) {
+      console.error('Controller createBucket Error:', error.message);
+      res.status(500).json({ error: error.message });
     }
   }
 
@@ -117,8 +122,9 @@ export default class MinioController {
     try {
       const buckets = await this.manager.getBucketsList();
       res.status(200).json({ buckets });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to list buckets" });
+    } catch (error: any) {
+      console.error('Controller getBucketsList Error:', error.message);
+      res.status(500).json({ error: error.message });
     }
   }
 }

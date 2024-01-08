@@ -9,10 +9,10 @@ export default class MinioManager {
     this.repository = new MinioRepository();
   }
 
-  async uploadFile(bucketName: string, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
+  async uploadFile(bucketName: string, metadata: string | undefined, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
     try {
       console.log("manager - uploadFile");
-      const minioResult = await this.repository.uploadFile(bucketName, files);
+      const minioResult = await this.repository.uploadFile(bucketName, metadata, files);
       console.log("manager - uploadFile result", minioResult);
       if (minioResult) {
         return minioResult;
@@ -21,9 +21,9 @@ export default class MinioManager {
         throw new Error('Error uploading file');
       }
 
-    } catch (error) {
-      console.error(error);
-      throw new Error('Error uploading file');
+    } catch (error: any) {
+      console.error('Manager Error [uploadFile]:', error.message);
+      throw new Error('Error in uploadFile');
     }
   }
 
@@ -44,19 +44,19 @@ export default class MinioManager {
       const dataStream = await this.repository.getFileByName(bucketName, objectName);
       // Perform any additional processing here if needed
       return dataStream;
-    } catch (error) {
-      console.error("manager - Error getFileByName:", error);
-      throw error;
+    } catch (error: any) {
+      console.error('Manager Error [getFileByName]:', error.message);
+      throw new Error('Error in getFileByName');
     }
   }
 
-  async getAllFilesByBucket(bucketName: string): Promise<string[]> {
+  async getAllFilesByBucket(bucketName: string): Promise<{ file: string; id: string; metadata: any }[]> {
     try {
       const files = await this.repository.getAllFilesByBucket(bucketName);
       return files;
-    } catch (error) {
-      console.error("manager - Error getAllFilesByBucket:", error);
-      throw error;
+    } catch (error: any) {
+      console.error('Manager Error [getAllFilesByBucket]:', error.message);
+      throw new Error('Error in getAllFilesByBucket');
     }
   }
 
@@ -64,27 +64,27 @@ export default class MinioManager {
     try {
       const response = await this.repository.deleteFile(bucketName, objectName);
       return response;
-    } catch (error) {
-      console.error("manager - Error deleteFile:", error);
-      throw error;
+    } catch (error: any) {
+      console.error('Manager Error [deleteFile]:', error.message);
+      throw new Error('Error in deleteFile');
     }
   }
 
   async createBucket(bucketName: string): Promise<string> {
     try {
       return this.repository.createBucket(bucketName);
-    } catch (error) {
-      console.error("manager - Error createBucket:", error);
-      throw error;
+    } catch (error: any) {
+      console.error('Manager Error [createBucket]:', error.message);
+      throw new Error('Error in createBucket');
     }
   }
 
   async getBucketsList(): Promise<BucketItemFromList[]> {
     try {
       return this.repository.getBucketsList();
-    } catch (error) {
-      console.error("manager - Error getBucketsList:", error);
-      throw error;
+    } catch (error: any) {
+      console.error('Manager Error [getBucketsList]:', error.message);
+      throw new Error('Error in getBucketsList');
     }
   }
 }
