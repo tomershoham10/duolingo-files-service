@@ -57,8 +57,8 @@ export default class MinioController {
   // }
 
   async getFileByName(req: Request, res: Response) {
-    const bucketName = req.body.bucketName;
-    const objectName = req.body.objectName;
+    const bucketName = req.params.bucketName;
+    const objectName = req.params.objectName;
 
     try {
       const fileData = await this.manager.getFileByName(bucketName, objectName);
@@ -77,7 +77,7 @@ export default class MinioController {
 
   async getAllFilesByBucket(req: Request, res: Response) {
     try {
-      const bucketName = req.body.bucketName;
+      const bucketName = req.params.bucketName;
       console.log("files service controller - get all files by bucket", bucketName);
 
       const files = await this.manager.getAllFilesByBucket(bucketName);

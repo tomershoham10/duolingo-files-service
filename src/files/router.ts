@@ -9,7 +9,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 filesRouter
-    .get("/download/:objectName", controller.getFileByName.bind(controller))
+    .get("/download/:bucketName/:objectName", controller.getFileByName.bind(controller))
     .get("/get-files-by-bucket/:bucketName", controller.getAllFilesByBucket.bind(controller))
     .get("/buckets-list", controller.getBucketsList.bind(controller));
 
