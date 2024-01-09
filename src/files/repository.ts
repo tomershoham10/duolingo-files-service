@@ -1,7 +1,7 @@
 import { PassThrough, Stream } from 'stream';
 import { minioClient } from "../server.js";
-import { FileMetadata } from './model.js';
 import { BucketItemFromList, UploadedObjectInfo } from 'minio';
+import { FileMetadata } from './model.js';
 
 export class MinioRepository {
 
@@ -132,10 +132,10 @@ export class MinioRepository {
     }
   }
 
-  async getAllFilesByBucket(bucketName: string): Promise<{ file: string; id: string; metadata: any }[]> {
+  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: FileMetadata }[]> {
     try {
       const objectsStream: Stream = minioClient.listObjects(bucketName, "");
-      const files: { file: string; id: string; metadata: FileMetadata }[] = [];
+      const files: { name: string; id: string; metadata: FileMetadata }[] = [];
 
 
       const statPromises: Promise<void>[] = [];
@@ -144,7 +144,7 @@ export class MinioRepository {
         const statPromise = minioClient.statObject(bucketName, object.name)
           .then((stat) => {
             const metadata = stat.metaData as FileMetadata;
-            files.push({ file: object.name, id: stat.etag, metadata });
+            files.push({ name: object.name, id: stat.etag, metadata });
           })
           .catch((error) => {
             console.error(`Error getting metadata for ${object.name}:`, error);
