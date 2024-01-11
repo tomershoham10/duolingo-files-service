@@ -1,7 +1,7 @@
 import { PassThrough, Stream } from 'stream';
 import { minioClient } from "../server.js";
 import { BucketItemFromList, UploadedObjectInfo } from 'minio';
-import { FileMetadata } from './model.js';
+import { RecordMetadata, SonogramMetadata } from './model.js';
 
 export class MinioRepository {
 
@@ -13,10 +13,10 @@ export class MinioRepository {
         fileStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
         fileStream.on('end', () => {
           const buffer = Buffer.concat(chunks);
-          console.log("repository - upload - metadata", metadata, JSON.parse(metadata ? metadata : ''))
-          minioClient.putObject(bucketName, objectName, buffer, size, JSON.parse(metadata ? metadata : ''), function (err, objInfo) {
+          console.log("repository - upload - metadata", metadata, JSON.parse(metadata || '{}'))
+          minioClient.putObject(bucketName, objectName, buffer, size, JSON.parse(metadata || '{}'), function (err, objInfo) {
             if (err) {
-              console.error(err);
+              console.error("putObjectPromise - error", err);
               reject(`File upload failed: ${err.message}`);
             } else {
               console.log(`File uploaded successfully ${objInfo}`);
@@ -132,10 +132,10 @@ export class MinioRepository {
     }
   }
 
-  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: FileMetadata }[]> {
+  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: RecordMetadata | SonogramMetadata }[]> {
     try {
       const objectsStream: Stream = minioClient.listObjects(bucketName, "");
-      const files: { name: string; id: string; metadata: FileMetadata }[] = [];
+      const files: { name: string; id: string; metadata: RecordMetadata | SonogramMetadata }[] = [];
 
 
       const statPromises: Promise<void>[] = [];
@@ -143,7 +143,7 @@ export class MinioRepository {
       objectsStream.on('data', (object) => {
         const statPromise = minioClient.statObject(bucketName, object.name)
           .then((stat) => {
-            const metadata = stat.metaData as FileMetadata;
+            const metadata = stat.metaData as RecordMetadata | SonogramMetadata;
             files.push({ name: object.name, id: stat.etag, metadata });
           })
           .catch((error) => {

@@ -7,7 +7,7 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ) {
-  console.error(err);
+  console.error('errorHandler - ', err);
   if (!(err instanceof CustomError)) {
     res.status(500).send(
       JSON.stringify({

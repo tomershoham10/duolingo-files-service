@@ -40,7 +40,7 @@ const configureMiddlewares = (app: Express) => {
   app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use(errorHandler);
+  // app.use(errorHandler);
 
 
   // app.post('/api/files/upload', upload.single('file'), async (req, res, next) => {

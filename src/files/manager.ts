@@ -1,7 +1,7 @@
 // manager.ts
 import { BucketItemFromList, UploadedObjectInfo } from "minio";
 import { MinioRepository } from "./repository.js";
-import { FileMetadata } from "./model.js";
+import { RecordMetadata, SonogramMetadata } from "./model.js";
 
 export default class MinioManager {
   private repository: MinioRepository;
@@ -51,7 +51,7 @@ export default class MinioManager {
     }
   }
 
-  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: FileMetadata }[]> {
+  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: RecordMetadata | SonogramMetadata }[]> {
     try {
       const files = await this.repository.getAllFilesByBucket(bucketName);
       return files;
