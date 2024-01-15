@@ -61,6 +61,16 @@ export default class MinioManager {
     }
   }
 
+  async getSonolistByRecordName(recordId: string): Promise<string> {
+    try {
+      const files = await this.repository.getSonolistByRecordName(recordId);
+      return files;
+    } catch (error: any) {
+      console.error('Manager Error [getSonolistByRecordName]:', error.message);
+      throw new Error('Error in getSonolistByRecordName');
+    }
+  }
+
   async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
     try {
       const response = await this.repository.deleteFile(bucketName, objectName);
