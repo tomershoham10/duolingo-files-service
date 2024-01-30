@@ -111,6 +111,21 @@ export default class MinioController {
     }
   }
 
+  async isFileExisted(req: Request, res: Response) {
+    try {
+      const fileName = req.params.fileName;
+      const bucketName = req.params.bucketName;
+      console.log("files service controller - isFileExisted", fileName, bucketName);
+
+      const status = await this.manager.isFileExisted(fileName, bucketName);
+      console.log("files service controller -isFileExisted status", status);
+      res.status(200).json({ status });
+    } catch (error: any) {
+      console.error('Controller isFileExisted Error:', error, "massage: ", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   async deleteFile(req: Request, res: Response) {
     const bucketName = req.body.bucketName;
     const objectName = req.body.objectName;

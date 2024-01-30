@@ -67,7 +67,17 @@ export default class MinioManager {
       return files;
     } catch (error: any) {
       console.error('Manager Error [getSonolistByRecordName]:', error.message);
-      throw new Error('Error in getSonolistByRecordName');
+      throw new Error(error.message);
+    }
+  }
+
+  async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
+    try {
+      const status = await this.repository.isFileExisted(fileName, bucketName);
+      return status;
+    } catch (error: any) {
+      console.error('Manager Error [isFileExisted]:', error.message);
+      throw new Error('Error in isFileExisted');
     }
   }
 

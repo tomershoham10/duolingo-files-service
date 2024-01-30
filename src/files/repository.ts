@@ -232,7 +232,22 @@ export class MinioRepository {
     }
   }
 
+  async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
+    try {
+      const fileStream = await minioClient.getObject(bucketName, fileName);
+      return !!fileStream;
+    }
+    catch (error: any) {
 
+      if (error.code === 'NoSuchKey') {
+        console.error('Repository Error isFileExisted - not found:', error.message);
+        return false; 
+      } else {
+        console.error('Repository Error isFileExisted:', error.message);
+        throw new Error(`repo - isFileExisted: ${error}`);
+      }
+    }
+  }
 
   // async getSonolistByRecordName(recordName: string): Promise<string> {
   //   try {
