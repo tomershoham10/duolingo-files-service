@@ -81,6 +81,17 @@ export default class MinioManager {
     }
   }
 
+  async updateMetadata(fileName: string, bucketName: string, meatadata: Partial<RecordMetadata> | Partial<SonogramMetadata>): Promise<UploadedObjectInfo | null> {
+    try {
+      const updatedFile = await this.repository.updateMetadata(fileName, bucketName, meatadata);
+      return updatedFile;
+    } catch (error: any) {
+      console.error('Manager Error [updateMetadata]:', error.message);
+      throw new Error('Error in updateMetadata');
+    }
+  }
+
+
   async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
     try {
       const response = await this.repository.deleteFile(bucketName, objectName);

@@ -1,6 +1,6 @@
-import { PassThrough, Stream } from 'stream';
+import { PassThrough, Readable, Stream } from 'stream';
 import { minioClient } from "../server.js";
-import { BucketItemFromList, UploadedObjectInfo } from 'minio';
+import { BucketItemFromList, UploadedObjectInfo, CopyConditions } from 'minio';
 import { RecordMetadata, SonogramMetadata } from './model.js';
 
 export class MinioRepository {
@@ -241,7 +241,7 @@ export class MinioRepository {
 
       if (error.code === 'NoSuchKey') {
         console.error('Repository Error isFileExisted - not found:', error.message);
-        return false; 
+        return false;
       } else {
         console.error('Repository Error isFileExisted:', error.message);
         throw new Error(`repo - isFileExisted: ${error}`);
@@ -296,6 +296,112 @@ export class MinioRepository {
     } catch (error: any) {
       console.error('Repository Error:', error.message);
       throw new Error(`repo - deleteFile: ${error}`);
+    }
+  }
+
+  // async updateMetadata(fileName: string, bucketName: string, newMetadata: Partial<RecordMetadata> | Partial<SonogramMetadata>): Promise<UploadedObjectInfo | null> {
+  //   try {
+  //     return new Promise<UploadedObjectInfo>((resolve, reject) => {
+  //       const objectsStream = minioClient.listObjectsV2(bucketName, '', true);
+  //       objectsStream.on('data', async (obj) => {
+  //         const objName = obj.name;
+  //         const objSize = obj.size
+  //         if (objName === fileName) {
+  //           const fileStream = new PassThrough();
+  //           const chunks: Buffer[] = [];
+  //           fileStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+
+  //           const existingMetadata = await minioClient.statObject(bucketName, fileName).then(stat => stat.metaData);
+  //           const updatedMetadata = {
+  //             ...existingMetadata,
+  //             ...newMetadata,
+  //           };
+  //           console.log("updateMetadata repo - updatedMetadata", updatedMetadata);
+  //           fileStream.on('end', () => {
+
+  //             const buffer = Buffer.concat(chunks);
+
+  //             minioClient.putObject(bucketName, objName, buffer, objSize, updatedMetadata, function (err, objInfo) {
+  //               if (err) {
+  //                 console.error("putObjectPromise - error", err);
+  //                 reject(`metadata update failed: ${err.message}`);
+  //               } else {
+  //                 console.log(`metadata updated successfully ${objInfo} ${updatedMetadata}`);
+  //                 resolve(objInfo);
+  //               }
+  //             });
+  //           })
+  //         }
+  //       })
+  //     });
+  //   }
+  //   catch (error: any) {
+
+  //     if (error.code === 'NoSuchKey') {
+  //       console.error('Repository Error isFileExisted - not found:', error.message);
+  //       return null;
+  //     } else {
+  //       console.error('Repository Error isFileExisted:', error.message);
+  //       throw new Error(`repo - isFileExisted: ${error}`);
+  //     }
+  //   }
+  // }
+
+
+  async updateMetadata(
+    fileName: string,
+    bucketName: string,
+    newMetadata: Partial<RecordMetadata> | Partial<SonogramMetadata>
+  ): Promise<UploadedObjectInfo | null> {
+    try {
+      const objectInfo = await minioClient.statObject(bucketName, fileName);
+      const existingMetadata = objectInfo.metaData;
+
+      const updatedMetadata = {
+        ...existingMetadata,
+        ...newMetadata,
+      };
+
+      console.log("existingMetadata",existingMetadata);
+      console.log("newMetadata",newMetadata);
+      console.log("updatedMetadata",updatedMetadata);
+
+      const getObjectStream = minioClient.getObject(bucketName, fileName) ;
+
+      const chunks: Buffer[] = [];
+
+      (await getObjectStream).on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+
+      await new Promise<void>(async (resolve, reject) => {
+        (await getObjectStream).on('end', () => {
+          resolve();
+        });
+        (await getObjectStream).on('error', (err) => reject(err));
+      });
+
+      const buffer = Buffer.concat(chunks);
+
+      const putObjectInfo = await new Promise<UploadedObjectInfo>((resolve, reject) => {
+        minioClient.putObject(bucketName, fileName, buffer, buffer.length, updatedMetadata, (err, objInfo) => {
+          if (err) {
+            console.error('putObject - error', err);
+            reject(`Metadata update failed: ${err.message}`);
+          } else {
+            console.log(`Metadata updated successfully: ${objInfo} ${updatedMetadata}`);
+            resolve(objInfo);
+          }
+        });
+      });
+
+      return putObjectInfo;
+    } catch (error: any) {
+      if (error.code === 'NoSuchKey') {
+        console.error('Repository Error updateMetadata - not found:', error.message);
+        return null;
+      } else {
+        console.error('Repository Error updateMetadata:', error.message);
+        throw new Error(`updateMetadata: ${error}`);
+      }
     }
   }
 

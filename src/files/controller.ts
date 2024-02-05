@@ -116,12 +116,26 @@ export default class MinioController {
       const fileName = req.params.fileName;
       const bucketName = req.params.bucketName;
       console.log("files service controller - isFileExisted", fileName, bucketName);
-
+  
       const status = await this.manager.isFileExisted(fileName, bucketName);
       console.log("files service controller -isFileExisted status", status);
       res.status(200).json({ status });
     } catch (error: any) {
       console.error('Controller isFileExisted Error:', error, "massage: ", error.message);
+    res.status(500).json({ error: error.message });
+    }
+  }
+
+  async updateMetadata(req: Request, res: Response) {
+    const fileName = req.params.fileName;
+    const bucketName = req.params.bucketName;
+    const newMeata = req.body.metadata;
+    try {
+      const file = await this.manager.updateMetadata(fileName, bucketName, newMeata);
+      console.log("files service controller -updateMetadata updated file", file);
+      res.status(200).json({ file });
+    } catch (error: any) {
+      console.error('Controller updateMetadata Error:', error.message);
       res.status(500).json({ error: error.message });
     }
   }

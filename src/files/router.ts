@@ -20,6 +20,10 @@ filesRouter
     .post("/uploadFilesArray", upload.array('file'), controller.uploadFile.bind(controller))
     .post("/create-bucket", controller.createBucket.bind(controller));
 
+
+filesRouter
+    .put("/updateMetadata/:bucketName/:fileName", controller.updateMetadata.bind(controller))
+
 filesRouter.delete("/delete/:objectName", controller.deleteFile.bind(controller));
 
 export default filesRouter;
