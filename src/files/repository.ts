@@ -1,6 +1,6 @@
-import { PassThrough, Readable, Stream } from 'stream';
+import { PassThrough, Stream } from 'stream';
 import { minioClient } from "../server.js";
-import { BucketItemFromList, UploadedObjectInfo, CopyConditions } from 'minio';
+import { BucketItemFromList, UploadedObjectInfo } from 'minio';
 import { RecordMetadata, SonogramMetadata } from './model.js';
 
 export class MinioRepository {
@@ -13,8 +13,8 @@ export class MinioRepository {
         fileStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
         fileStream.on('end', () => {
           const buffer = Buffer.concat(chunks);
-          console.log("repository - upload - metadata", metadata, JSON.parse(metadata || '{}'))
-          minioClient.putObject(bucketName, objectName, buffer, size, JSON.parse(metadata || '{}'), function (err, objInfo) {
+          console.log("repository - upload - metadata", metadata, metadata ? JSON.parse(metadata) : '{}');
+          minioClient.putObject(bucketName, objectName, buffer, size, metadata ? JSON.parse(metadata) : '{}', function (err, objInfo) {
             if (err) {
               console.error("putObjectPromise - error", err);
               reject(`File upload failed: ${err.message}`);
@@ -144,6 +144,7 @@ export class MinioRepository {
         const statPromise = minioClient.statObject(bucketName, object.name)
           .then((stat) => {
             const metadata = stat.metaData as RecordMetadata | SonogramMetadata;
+            console.log("1", metadata, "2", JSON.stringify(metadata))
             files.push({ name: object.name, id: stat.etag, metadata });
           })
           .catch((error) => {
@@ -171,24 +172,6 @@ export class MinioRepository {
           reject(error);
         });
       });
-      // objectsStream.on('data', async (object) => {
-      //   console.log("check", object);
-      //   const stat = await minioClient.statObject(bucketName, object.name); 
-      //   console.log("check2", stat);
-      //   files.push({ file: object, id: stat.etag, metadata: stat.metaData });
-      // });
-
-      // return new Promise((resolve, reject) => {
-      //   objectsStream.on('end', () => {
-      //     console.log('repo - getAllFilesByBucket - files', files);
-      //     resolve(files);
-      //   });
-
-      //   objectsStream.on('error', (error) => {
-      //     console.error("Error getAllFilesByBucket:", error);
-      //     reject(error);
-      //   });
-      // });
     } catch (error: any) {
       console.error('Repository Error:', error.message);
       throw new Error(`repo - getAllFilesByBucket: ${error}`);
@@ -240,7 +223,7 @@ export class MinioRepository {
     catch (error: any) {
 
       if (error.code === 'NoSuchKey') {
-        console.error('Repository Error isFileExisted - not found:', error.message);
+        console.log('Repository Error isFileExisted - not found:', error.message);
         return false;
       } else {
         console.error('Repository Error isFileExisted:', error.message);
@@ -361,12 +344,11 @@ export class MinioRepository {
         ...existingMetadata,
         ...newMetadata,
       };
+      console.log("existingMetadata", existingMetadata);
+      console.log("newMetadata", newMetadata);
+      console.log("updatedMetadata", updatedMetadata);
 
-      console.log("existingMetadata",existingMetadata);
-      console.log("newMetadata",newMetadata);
-      console.log("updatedMetadata",updatedMetadata);
-
-      const getObjectStream = minioClient.getObject(bucketName, fileName) ;
+      const getObjectStream = minioClient.getObject(bucketName, fileName);
 
       const chunks: Buffer[] = [];
 

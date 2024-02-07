@@ -1,7 +1,8 @@
-enum Transmissions {
+enum SignatureTypes {
   PASSIVE = 'passive',
   ACTIVE = 'active',
-  BOTH = 'both'
+  PASSIVEACTIVE = 'passive and active',
+  TORPEDO = 'torpedo',
 }
 
 enum SonarSystem {
@@ -9,15 +10,31 @@ enum SonarSystem {
   LOFAR = 'lofar'
 }
 
+// export interface RecordMetadata {
+//   record_length: number;
+//   sonograms_ids: string[];
+//   difficulty_level: number;
+//   targets_ids_list: string[];
+//   operation: string;
+//   source: string;
+//   is_in_italy: boolean;
+//   transmition: Transmissions;
+//   channels_number: number;
+//   sonar_system: SonarSystem;
+//   is_backround_vessels: boolean;
+//   aux: boolean;
+// }
+
 export interface RecordMetadata {
   record_length: number;
   sonograms_ids: string[];
   difficulty_level: number;
   targets_ids_list: string[];
+
   operation: string;
-  source: string;
+  source: string; //new mongo schema
   is_in_italy: boolean;
-  transmition: Transmissions;
+  signature_type: SignatureTypes;
   channels_number: number;
   sonar_system: SonarSystem;
   is_backround_vessels: boolean;
@@ -25,16 +42,7 @@ export interface RecordMetadata {
 }
 
 export interface SonogramMetadata {
-  sonograms_ids: string[];
-  record_length: number;
-  difficulty_level: number;
-  targets_ids_list: string[];
-  operation: string;
-  source: string;
-  is_in_italy: boolean;
-  transmition: Transmissions;
-  channels_number: number;
-  sonar_system: SonarSystem;
-  is_backround_vessels: boolean;
-  aux: boolean;
+  sonogram_type: SonarSystem;
+  fft: number;
+  bw: number;
 }
