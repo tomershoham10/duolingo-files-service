@@ -1,11 +1,11 @@
 import { PassThrough, Stream } from 'stream';
 import { minioClient } from "../server.js";
-import { BucketItemFromList, UploadedObjectInfo } from 'minio';
-import { RecordMetadata, SonogramMetadata } from './model.js';
+import { BucketItemFromList, ItemBucketMetadata, UploadedObjectInfo } from 'minio';
+import { RecordMetadata, SignatureTypes, SonarSystem, SonogramMetadata } from './model.js';
 
 export class MinioRepository {
 
-  async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number, metadata: string | undefined): Promise<UploadedObjectInfo> {
+  async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number, metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>): Promise<UploadedObjectInfo> {
     try {
       return new Promise<UploadedObjectInfo>((resolve, reject) => {
         // Convert the PassThrough stream to Buffer
@@ -13,8 +13,8 @@ export class MinioRepository {
         fileStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
         fileStream.on('end', () => {
           const buffer = Buffer.concat(chunks);
-          console.log("repository - upload - metadata", metadata, metadata ? JSON.parse(metadata) : '{}');
-          minioClient.putObject(bucketName, objectName, buffer, size, metadata ? JSON.parse(metadata) : '{}', function (err, objInfo) {
+          console.log("repository - upload - metadata", metadata, metadata ? JSON.stringify(metadata) : '{}');
+          minioClient.putObject(bucketName, objectName, buffer, size, metadata ? metadata : {}, function (err, objInfo) {
             if (err) {
               console.error("putObjectPromise - error", err);
               reject(`File upload failed: ${err.message}`);
@@ -32,7 +32,7 @@ export class MinioRepository {
     }
   }
 
-  async uploadFile(bucketName: string, metadata: string | undefined, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
+  async uploadFile(bucketName: string, metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
     try {
       if (!files) {
         throw new Error('No files provided.');
@@ -132,10 +132,10 @@ export class MinioRepository {
     }
   }
 
-  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: RecordMetadata | SonogramMetadata }[]> {
+  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[]> {
     try {
       const objectsStream: Stream = minioClient.listObjects(bucketName, "");
-      const files: { name: string; id: string; metadata: RecordMetadata | SonogramMetadata }[] = [];
+      const files: { name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[] = [];
 
 
       const statPromises: Promise<void>[] = [];
@@ -143,9 +143,58 @@ export class MinioRepository {
       objectsStream.on('data', (object) => {
         const statPromise = minioClient.statObject(bucketName, object.name)
           .then((stat) => {
-            const metadata = stat.metaData as RecordMetadata | SonogramMetadata;
-            console.log("1", metadata, "2", JSON.stringify(metadata))
-            files.push({ name: object.name, id: stat.etag, metadata });
+            const metadata = stat.metaData as ItemBucketMetadata;
+            const metaKeys = Object.keys(metadata);
+            console.log("metaKeys", metaKeys)
+            let convertedMetadata: Partial<RecordMetadata> | Partial<SonogramMetadata> = {};
+
+            for (const key in metadata) {
+              if (metadata.hasOwnProperty(key)) {
+                switch (key) {
+
+
+                  // Map each key to its corresponding type
+                  case 'record_length':
+                  case 'difficulty_level':
+                  case 'channels_number':
+                    if (metaKeys.includes(key)) {
+                      (convertedMetadata as Partial<RecordMetadata>)[key] = parseInt(metadata[key]);
+                    }
+                    break;
+                  case 'sonograms_ids':
+                  case 'targets_ids_list':
+                    if (metaKeys.includes(key)) {
+                      (convertedMetadata as Partial<RecordMetadata>)[key] = metadata[key].split(',');
+                    }
+                    break;
+                  case 'is_in_italy':
+                  case 'is_backround_vessels':
+                  case 'aux':
+                    if (metaKeys.includes(key)) {
+                      (convertedMetadata as Partial<RecordMetadata>)[key] = metadata[key] === 'true';
+                    }
+                    break;
+                  case 'signature_type':
+                    if (metaKeys.includes(key)) {
+                      (convertedMetadata as Partial<RecordMetadata>)[key] = SignatureTypes[metadata[key] as keyof typeof SignatureTypes];
+                    }
+                    break;
+                  case 'sonar_system':
+                    if (metaKeys.includes(key)) {
+                      (convertedMetadata as Partial<SonogramMetadata>)['sonogram_type'] = metadata[key] as SonarSystem;
+                    }
+                    break;
+                  // Handle other cases here
+                  default:
+                    // If key doesn't match any known properties, ignore it
+                    break;
+                }
+              }
+            }
+
+            // console.log("convertedMetadata", convertedMetadata);
+
+            files.push({ name: object.name, id: stat.etag, metadata: convertedMetadata });
           })
           .catch((error) => {
             console.error(`Error getting metadata for ${object.name}:`, error);
@@ -183,13 +232,13 @@ export class MinioRepository {
       const bucketName = "records";
       const objectsStream: Stream = minioClient.listObjects(bucketName, "");
       const data: Buffer[] = [];
-      let record: { name: string; id: string; metadata: RecordMetadata | SonogramMetadata };
+      let record: { name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> };
 
       const try1 = await new Promise<any>((resolve, reject) => {
         objectsStream.on('data', async () => {
           try {
             const stat = await minioClient.statObject(bucketName, recordName);
-            const metadata = stat.metaData as RecordMetadata | SonogramMetadata;
+            const metadata = stat.metaData as Partial<RecordMetadata> | Partial<SonogramMetadata>;
             record = { name: recordName, id: stat.etag, metadata };
           } catch (error) {
             console.error(`Error getting metadata for ${recordName}:`, error);

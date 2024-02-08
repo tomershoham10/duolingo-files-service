@@ -1,11 +1,11 @@
-enum SignatureTypes {
+export enum SignatureTypes {
   PASSIVE = 'passive',
   ACTIVE = 'active',
   PASSIVEACTIVE = 'passive and active',
   TORPEDO = 'torpedo',
 }
 
-enum SonarSystem {
+export enum SonarSystem {
   DEMON = 'demon',
   LOFAR = 'lofar'
 }
@@ -30,9 +30,8 @@ export interface RecordMetadata {
   sonograms_ids: string[];
   difficulty_level: number;
   targets_ids_list: string[];
-
   operation: string;
-  source: string; //new mongo schema
+  source_id: string; 
   is_in_italy: boolean;
   signature_type: SignatureTypes;
   channels_number: number;

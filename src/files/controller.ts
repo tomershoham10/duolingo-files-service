@@ -1,6 +1,7 @@
 // controller.ts
 import { Request, Response } from "express";
 import MinioManager from "./manager.js";
+import { RecordMetadata, SonogramMetadata } from "./model.js";
 
 export default class MinioController {
   private manager: MinioManager;
@@ -12,7 +13,9 @@ export default class MinioController {
     try {
       console.log("controller - uploadFile", req.file, "controller - uploadFile body", req.body);
       const bucketName: string = req.body.bucketName;
-      const metadata: string = req.body.metadata;
+      const metadataString: string = req.body.metadata;
+      const metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> = JSON.parse(metadataString);
+      console.log('controller - uploadFile - metadata', metadataString, metadata)
       const files: Express.Multer.File[] | Express.Multer.File | { [fieldname: string]: Express.Multer.File[]; } | undefined = req.files || req.file;
       if (!files) {
         return res.status(400).json({ success: false, message: 'No files provided.' });
@@ -116,13 +119,13 @@ export default class MinioController {
       const fileName = req.params.fileName;
       const bucketName = req.params.bucketName;
       console.log("files service controller - isFileExisted", fileName, bucketName);
-  
+
       const status = await this.manager.isFileExisted(fileName, bucketName);
       console.log("files service controller -isFileExisted status", status);
       res.status(200).json({ status });
     } catch (error: any) {
       console.error('Controller isFileExisted Error:', error, "massage: ", error.message);
-    res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message });
     }
   }
 

@@ -10,7 +10,7 @@ export default class MinioManager {
     this.repository = new MinioRepository();
   }
 
-  async uploadFile(bucketName: string, metadata: string | undefined, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
+  async uploadFile(bucketName: string, metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
     try {
       console.log("manager - uploadFile");
       const minioResult = await this.repository.uploadFile(bucketName, metadata, files);
@@ -51,7 +51,7 @@ export default class MinioManager {
     }
   }
 
-  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: RecordMetadata | SonogramMetadata }[]> {
+  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[]> {
     try {
       const files = await this.repository.getAllFilesByBucket(bucketName);
       return files;
