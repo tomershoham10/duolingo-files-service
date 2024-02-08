@@ -164,7 +164,7 @@ export class MinioRepository {
                   case 'sonograms_ids':
                   case 'targets_ids_list':
                     if (metaKeys.includes(key)) {
-                      (convertedMetadata as Partial<RecordMetadata>)[key] = metadata[key].split(',');
+                      (convertedMetadata as Partial<RecordMetadata>)[key] = metadata[key].split(', ');
                     }
                     break;
                   case 'is_in_italy':
