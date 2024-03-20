@@ -157,14 +157,22 @@ export class MinioRepository {
                   case 'record_length':
                   case 'difficulty_level':
                   case 'channels_number':
+
                     if (metaKeys.includes(key)) {
-                      (convertedMetadata as Partial<RecordMetadata>)[key] = parseInt(metadata[key]);
+                      console.log('record_length', metadata[key], parseFloat(metadata[key]));
+                      (convertedMetadata as Partial<RecordMetadata>)[key] = parseFloat(metadata[key]);
                     }
                     break;
                   case 'sonograms_ids':
                   case 'targets_ids_list':
                     if (metaKeys.includes(key)) {
                       (convertedMetadata as Partial<RecordMetadata>)[key] = metadata[key].split(', ');
+                    }
+                    break;
+                  case 'operation':
+                  case 'source_id':
+                    if (metaKeys.includes(key)) {
+                      (convertedMetadata as Partial<RecordMetadata>)[key] = metadata[key];
                     }
                     break;
                   case 'is_in_italy':
@@ -180,6 +188,17 @@ export class MinioRepository {
                     }
                     break;
                   case 'sonar_system':
+                    if (metaKeys.includes(key)) {
+                      (convertedMetadata as Partial<RecordMetadata>)['sonar_system'] = metadata[key] as SonarSystem;
+                    }
+                    break;
+                  case 'fft':
+                  case 'bw':
+                    if (metaKeys.includes(key)) {
+                      (convertedMetadata as Partial<SonogramMetadata>)[key] = parseFloat(metadata[key]);
+                    }
+                    break;
+                  case 'sonogram_type':
                     if (metaKeys.includes(key)) {
                       (convertedMetadata as Partial<SonogramMetadata>)['sonogram_type'] = metadata[key] as SonarSystem;
                     }
@@ -226,6 +245,30 @@ export class MinioRepository {
       throw new Error(`repo - getAllFilesByBucket: ${error}`);
     }
   }
+
+  async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
+    name: string,
+    id: string,
+    metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>
+  }
+    | null> {
+    try {
+      console.log('repo - getFileMetadataByETag etag', etag);
+      const bucketFiles = await this.getAllFilesByBucket(bucketName);
+      const obj = bucketFiles.filter(file => file.id === etag)[0];
+      console.log('repo - getFileMetadataByETag obj', obj);
+      return obj;
+    } catch (error: any) {
+      if (error.code === 'NotFound') {
+        console.error(`File with ETag ${etag} not found.`);
+        return null;
+      } else {
+        console.error('Error retrieving file metadata:', error.message);
+        throw new Error(`getFileMetadataByETag: ${error}`);
+      }
+    }
+  }
+
 
   async getSonolistByRecordName(recordName: string): Promise<string> {
     try {

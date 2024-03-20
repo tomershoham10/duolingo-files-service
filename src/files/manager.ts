@@ -1,5 +1,5 @@
 // manager.ts
-import { BucketItemFromList, UploadedObjectInfo } from "minio";
+import { BucketItemFromList, ItemBucketMetadata, UploadedObjectInfo } from "minio";
 import { MinioRepository } from "./repository.js";
 import { RecordMetadata, SonogramMetadata } from "./model.js";
 
@@ -46,8 +46,23 @@ export default class MinioManager {
       // Perform any additional processing here if needed
       return dataStream;
     } catch (error: any) {
+
       console.error('Manager Error [getFileByName]:', error.message);
       throw new Error('Error in getFileByName');
+    }
+  }
+
+  async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
+    name: string,
+    id: string,
+    metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>
+  } | null> {
+    try {
+      const objectInfo = await this.repository.getFileMetadataByETag(bucketName, etag);
+      return objectInfo;
+    } catch (error: any) {
+      console.error('Error retrieving file metadata:', error.message);
+      throw new Error(`getFileMetadataByETag: ${error}`);
     }
   }
 

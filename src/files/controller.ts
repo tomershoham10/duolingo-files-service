@@ -80,6 +80,25 @@ export default class MinioController {
     }
   }
 
+  async getMetadataByETag(req: Request, res: Response) {
+    const bucketName = req.params.bucketName;
+    const etag = req.params.etag;
+
+    try {
+      const objectInfo = await this.manager.getFileMetadataByETag(bucketName, etag);
+
+      if (!!objectInfo) {
+
+        res.status(200).json(objectInfo);
+      } else {
+        res.status(404).json({ error: "File not found" });
+      }
+    } catch (error: any) {
+      console.error('Controller getMetadataByETag Error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   async getAllFilesByBucket(req: Request, res: Response) {
     try {
       const bucketName = req.params.bucketName;

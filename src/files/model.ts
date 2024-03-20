@@ -27,17 +27,17 @@ export enum SonarSystem {
 
 export interface RecordMetadata {
   record_length: number;
+  difficulty_level: number; //
+  channels_number: number;
   sonograms_ids: string[];
-  difficulty_level: number;
   targets_ids_list: string[];
   operation: string;
-  source_id: string; 
-  is_in_italy: boolean;
-  signature_type: SignatureTypes;
-  channels_number: number;
-  sonar_system: SonarSystem;
-  is_backround_vessels: boolean;
+  source_id: string;
+  is_in_italy: boolean; //
   aux: boolean;
+  is_backround_vessels: boolean;
+  signature_type: SignatureTypes; //
+  sonar_system: SonarSystem;
 }
 
 export interface SonogramMetadata {
