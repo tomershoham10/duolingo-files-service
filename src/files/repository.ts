@@ -269,7 +269,6 @@ export class MinioRepository {
     }
   }
 
-
   async getSonolistByRecordName(recordName: string): Promise<string> {
     try {
       const bucketName = "records";
@@ -281,6 +280,7 @@ export class MinioRepository {
         objectsStream.on('data', async () => {
           try {
             const stat = await minioClient.statObject(bucketName, recordName);
+
             const metadata = stat.metaData as Partial<RecordMetadata> | Partial<SonogramMetadata>;
             record = { name: recordName, id: stat.etag, metadata };
           } catch (error) {
@@ -306,6 +306,75 @@ export class MinioRepository {
       throw new Error(`repo - getAllFilesByBucket: ${error}`);
     }
   }
+
+
+  // async getSonolistURLByRecordName(recordName: string): Promise<string[]> {
+  //   try {
+  //     const bucketName = "records";
+  //     const objectsStream: Stream = minioClient.listObjects(bucketName, "");
+  //     let record: { name: string; id: string; metadata: Partial<RecordMetadata> };
+
+  //     const try1 = await new Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> }>((resolve, reject) => {
+  //       objectsStream.on('data', async () => {
+  //         try {
+  //           const stat = await minioClient.statObject(bucketName, recordName);
+  //           const metadata = stat.metaData as Partial<RecordMetadata>;
+  //           console.log("getSonolistURLByRecordName stat", stat);
+  //           record = { name: recordName, id: stat.etag, metadata: metadata };
+  //           console.log("getSonolistURLByRecordName record 1", record);
+  //         } catch (error) {
+  //           console.error(`Error getting metadata for ${recordName}:`, error);
+  //           reject(`Error getting metadata for ${recordName}, ${error}`);
+  //         }
+  //       });
+
+  //       objectsStream.on('end', () => {
+  //         console.log("getSonolistURLByRecordName record 2", record);
+  //         resolve(record);
+  //       });
+
+  //       objectsStream.on('error', (error) => {
+  //         console.error("Error getAllFilesByBucket:", error);
+  //         reject(error);
+  //       });
+  //     });
+
+  //     console.log("getSonolistURLByRecordName try1", try1);
+  //     const sonolist = try1.metadata.sonograms_ids;
+  //     console.log("getSonolistURLByRecordName", sonolist);
+  //     return sonolist || [];
+  //   } catch (error: any) {
+  //     console.error('Repository Error:', error.message);
+  //     throw new Error(`repo - getAllFilesByBucket: ${error}`);
+  //   }
+  // }
+
+  async getSonolistURLByRecordName(recordName: string): Promise<string[]> {
+    try {
+      const bucketName = "records";
+      const stat = await minioClient.statObject(bucketName, recordName);
+      if (!!!stat) return [];
+      const metadata = stat.metaData as Partial<RecordMetadata>;
+      let sonolist: string[] = [];
+      if (typeof metadata.sonograms_ids === 'string') {
+        sonolist = [metadata.sonograms_ids];
+      } else if (Array.isArray(metadata.sonograms_ids)) {
+        sonolist = metadata.sonograms_ids;
+      }
+      console.log("getSonolistURLByRecordName", metadata, sonolist);
+      if (!!!sonolist) return [];
+      const urls = await Promise.all(sonolist.map(async sonogram => {
+        const imageUrl = await minioClient.presignedUrl('GET', 'sonograms', sonogram, 24 * 60 * 60);
+        console.log("imageUrl", imageUrl);
+        return imageUrl;
+      }));
+      return urls || [];
+    } catch (error: any) {
+      console.error('Repository Error:', error.message);
+      throw new Error(`repo - getAllFilesByBucket: ${error}`);
+    }
+  }
+
 
   async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
     try {

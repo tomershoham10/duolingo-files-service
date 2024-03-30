@@ -133,6 +133,23 @@ export default class MinioController {
     }
   }
 
+  async getSonolistURLByRecordName(req: Request, res: Response) {
+    try {
+      const recordName = req.params.recordName;
+      console.log("files service controller - getSonolistURLByRecordName", recordName);
+
+      const files = await this.manager.getSonolistURLByRecordName(recordName);
+      console.log("files service controller - getSonolistURLByRecordName", files);
+      files ?
+        res.status(200).json({ files }) :
+        res.status(500).json({ error: "Internal server error" });
+      ;
+    } catch (error: any) {
+      console.error('Controller getSonolistURLByRecordName Error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   async isFileExisted(req: Request, res: Response) {
     try {
       const fileName = req.params.fileName;

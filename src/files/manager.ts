@@ -86,6 +86,16 @@ export default class MinioManager {
     }
   }
 
+  async getSonolistURLByRecordName(recordId: string): Promise<string[]> {
+    try {
+      const files = await this.repository.getSonolistURLByRecordName(recordId);
+      return files;
+    } catch (error: any) {
+      console.error('Manager Error [getSonolistURLByRecordName]:', error.message);
+      throw new Error(error.message);
+    }
+  }
+
   async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
     try {
       const status = await this.repository.isFileExisted(fileName, bucketName);

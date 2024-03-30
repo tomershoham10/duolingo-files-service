@@ -21,6 +21,8 @@ const startServer = () => {
 };
 
 const configureMiddlewares = (app: Express) => {
+  const storage = multer.memoryStorage(); // Use memory storage for simplicity; adjust as needed
+  // const upload = multer({ storage: storage });
   // const storage = multer.memoryStorage();
   // const limits = {
   //   fileSize: 50000000, // Adjust file size limit as needed
@@ -59,8 +61,6 @@ const configureMiddlewares = (app: Express) => {
   // });
 };
 
-const storage = multer.memoryStorage(); // Use memory storage for simplicity; adjust as needed
-const upload = multer({ storage: storage });
 
 const minioClient = new Client({
   endPoint: "server-minio-1", // Replace with your MinIO server hostname
@@ -70,5 +70,5 @@ const minioClient = new Client({
   secretKey: "your-minio-secret-key", // Your MinIO secret key
 });
 
-export { minioClient, upload };
+export { minioClient };
 export default startServer;
