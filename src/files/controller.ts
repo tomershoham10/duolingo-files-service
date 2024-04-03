@@ -96,33 +96,21 @@ export default class MinioController {
   async getSonolistByRecordName(req: Request, res: Response) {
     try {
       const recordName = req.params.recordName;
-      console.log("files service controller - getSonolistByRecordName", recordName);
+      console.log("files service controller - getSonolistByRecordName recordName", recordName);
 
-      const files = await this.manager.getSonolistByRecordName(recordName);
-      console.log("files service controller - getSonolistByRecordName", files);
-      files ?
-        res.status(200).json({ files }) :
-        res.status(500).json({ error: "Internal server error" });
+      const fileStreams = await this.manager.getSonolistByRecordName(recordName);
+      console.log("files service controller - getSonolistByRecordName fileStreams", fileStreams);
+      if (fileStreams.length <= 0) { res.status(404).json({ error: "no sonograms" }) };
+      fileStreams.forEach(fileStream => {
+        fileStream.pipe(res, { end: false });
+      });
+      // Close the response stream when all file streams are piped
+      Promise.all(fileStreams.map(stream => new Promise(resolve => stream.on('end', resolve)))).then(() => {
+        res.end();
+      });
       ;
     } catch (error: any) {
       console.error('Controller getSonolistByRecordName Error:', error.message);
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async getSonolistURLByRecordName(req: Request, res: Response) {
-    try {
-      const recordName = req.params.recordName;
-      console.log("files service controller - getSonolistURLByRecordName", recordName);
-
-      const files = await this.manager.getSonolistURLByRecordName(recordName);
-      console.log("files service controller - getSonolistURLByRecordName", files);
-      files ?
-        res.status(200).json({ files }) :
-        res.status(500).json({ error: "Internal server error" });
-      ;
-    } catch (error: any) {
-      console.error('Controller getSonolistURLByRecordName Error:', error.message);
       res.status(500).json({ error: error.message });
     }
   }

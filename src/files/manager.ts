@@ -57,22 +57,12 @@ export default class MinioManager {
     }
   }
 
-  async getSonolistByRecordName(recordId: string): Promise<string> {
+  async getSonolistByRecordName(recordId: string): Promise<NodeJS.ReadableStream[]> {
     try {
       const files = await this.repository.getSonolistByRecordName(recordId);
       return files;
     } catch (error: any) {
       console.error('Manager Error [getSonolistByRecordName]:', error.message);
-      throw new Error(error.message);
-    }
-  }
-
-  async getSonolistURLByRecordName(recordId: string): Promise<string[]> {
-    try {
-      const files = await this.repository.getSonolistURLByRecordName(recordId);
-      return files;
-    } catch (error: any) {
-      console.error('Manager Error [getSonolistURLByRecordName]:', error.message);
       throw new Error(error.message);
     }
   }

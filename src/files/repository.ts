@@ -217,45 +217,6 @@ export class MinioRepository {
     }
   }
 
-  async getSonolistByRecordName(recordName: string): Promise<string> {
-    try {
-      const bucketName = "records";
-      const objectsStream: Stream = minioClient.listObjects(bucketName, "");
-      const data: Buffer[] = [];
-      let record: { name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> };
-
-      const try1 = await new Promise<any>((resolve, reject) => {
-        objectsStream.on('data', async () => {
-          try {
-            const stat = await minioClient.statObject(bucketName, recordName);
-
-            const metadata = stat.metaData as Partial<RecordMetadata> | Partial<SonogramMetadata>;
-            record = { name: recordName, id: stat.etag, metadata };
-          } catch (error) {
-            console.error(`Error getting metadata for ${recordName}:`, error);
-            reject(`Error getting metadata for ${recordName}, ${error}`);
-          }
-        });
-
-        objectsStream.on('end', () => {
-          resolve(record);
-        });
-
-        objectsStream.on('error', (error) => {
-          console.error("Error getAllFilesByBucket:", error);
-          reject(error);
-        });
-      });
-
-      console.log("getSonolistByRecordName", try1);
-      return try1; // Adjust this based on what you want to return
-    } catch (error: any) {
-      console.error('Repository Error:', error.message);
-      throw new Error(`repo - getAllFilesByBucket: ${error}`);
-    }
-  }
-
-
   // async getSonolistURLByRecordName(recordName: string): Promise<string[]> {
   //   try {
   //     const bucketName = "records";
@@ -297,7 +258,7 @@ export class MinioRepository {
   //   }
   // }
 
-  async getSonolistURLByRecordName(recordName: string): Promise<string[]> {
+  async getSonolistByRecordName(recordName: string): Promise<NodeJS.ReadableStream[]> {
     try {
       const bucketName = "records";
       const stat = await minioClient.statObject(bucketName, recordName);
@@ -309,14 +270,14 @@ export class MinioRepository {
       } else if (Array.isArray(metadata.sonograms_ids)) {
         sonolist = metadata.sonograms_ids;
       }
-      console.log("getSonolistURLByRecordName", metadata, sonolist);
+      console.log("getSonolistByRecordName repo", sonolist);
       if (!!!sonolist) return [];
-      const urls = await Promise.all(sonolist.map(async sonogram => {
-        const imageUrl = await minioClient.presignedUrl('GET', 'sonograms', sonogram, 24 * 60 * 60);
-        console.log("imageUrl", imageUrl);
-        return imageUrl;
-      }));
-      return urls || [];
+
+      const promises = sonolist.map(fileName => this.getFileByName('sonograms', fileName));
+      const fileStreams = await Promise.all(promises);
+      console.log("getSonolistByRecordName repo - fileStreams", fileStreams);
+      return fileStreams;
+
     } catch (error: any) {
       console.error('Repository Error:', error.message);
       throw new Error(`repo - getAllFilesByBucket: ${error}`);
