@@ -1,5 +1,5 @@
 // manager.ts
-import { BucketItemFromList, ItemBucketMetadata, UploadedObjectInfo } from "minio";
+import { BucketItemFromList, UploadedObjectInfo } from "minio";
 import { MinioRepository } from "./repository.js";
 import { RecordMetadata, SonogramMetadata } from "./model.js";
 
@@ -28,29 +28,10 @@ export default class MinioManager {
     }
   }
 
-  // async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
-  //   try {
-  //     console.log("manager", bucketName, objectName, filePath);
-  //     const response = await this.repository.uploadFile(bucketName, objectName, filePath, metadata);
-  //     console.log("manager resopnse", response);
-  //     return response;
-  //   } catch (error) {
-  //     console.error("manager - Error uploadFile:", error);
-  //     throw error;
-  //   }
-  // };
-
-  async getFileByName(bucketName: string, objectName: string): Promise<Buffer | null> {
-    try {
-      const dataStream = await this.repository.getFileByName(bucketName, objectName);
-      // Perform any additional processing here if needed
-      return dataStream;
-    } catch (error: any) {
-
-      console.error('Manager Error [getFileByName]:', error.message);
-      throw new Error('Error in getFileByName');
-    }
-  }
+  async getFileByName(bucketName: string, imageName: string): Promise<NodeJS.ReadableStream> {
+    const imageUrl = await this.repository.getFileByName(bucketName, imageName);
+    return imageUrl;
+  };
 
   async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
     name: string,

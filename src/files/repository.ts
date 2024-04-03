@@ -1,4 +1,4 @@
-import { PassThrough, Stream } from 'stream';
+import internal, { PassThrough, Stream } from 'stream';
 import { minioClient } from "../server.js";
 import { BucketItemFromList, ItemBucketMetadata, UploadedObjectInfo } from 'minio';
 import { RecordMetadata, SignatureTypes, SonarSystem, SonogramMetadata } from './model.js';
@@ -68,69 +68,17 @@ export class MinioRepository {
     }
   };
 
-
-  // try {
-  //   // Use Minio client to upload the file
-  //   const fileStream = new Stream.PassThrough();
-  //   fileStream.end(file.buffer);
-  //   console.log("repo - upload", file);
-
-  //   await minioClient.putObject(bucketName, file.originalname, fileStream, file.size);
-  //   console.log("repo - upload - success");
-  //   return 'File uploaded successfully';
-  // } catch (error) {
-  //   console.error(error);
-  //   throw new Error('Error uploading file');
-  // }
-
-
-
-  // async uploadFile(bucketName: string, objectName: string, filePath: string, metadata: FileMetadata): Promise<string> {
-  //   try {
-
-  //     console.log("repo", bucketName, objectName, filePath);
-  //     const size = metadata.size;
-  //     const response = await new Promise<string>((resolve, reject) => {
-  //       minioClient.putObject(bucketName, objectName, filePath, size, metadata, function (err, objInfo) {
-  //         if (err) {
-  //           console.log(err);
-  //           reject('File upload failed: ' + err.message);
-  //         } else {
-  //           console.log(`File uploaded successfully ${objInfo}`);
-  //           resolve("File uploaded successfully");
-  //         }
-  //       });
-  //     });
-  //     return response;
-  //   } catch (error) {
-  //     console.error(`Error uploading file: ${error}`);
-  //     throw new Error(`Error uploding the file: ${error}`);
-  //   }
-  // }
-
-  async getFileByName(bucketName: string, fileName: string): Promise<Buffer | null> {
-    try {
-      const fileStream = await minioClient.getObject(bucketName, fileName);
-      const data: Buffer[] = [];
-
-      return new Promise((resolve, reject) => {
-        fileStream.on('data', (chunk) => {
-          data.push(chunk);
-        });
-
-        fileStream.on('end', () => {
-          const fileData = Buffer.concat(data);
-          resolve(fileData);
-        });
-
-        fileStream.on('error', (error) => {
-          reject(error);
-        });
-      });
-    } catch (error) {
-      throw new Error(`Error getFileByName: ${error}`);
-    }
-  }
+  async getFileByName(bucketName: string, fileName: string): Promise<NodeJS.ReadableStream> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const stream = await minioClient.getObject(bucketName, fileName);
+        console.log('getFileByName', bucketName, '/', fileName, ': ', stream);
+        resolve(stream);
+      } catch (err) {
+        reject(`getFileByName repo - ${err}`);
+      }
+    });
+  };
 
   async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[]> {
     try {
@@ -442,55 +390,6 @@ export class MinioRepository {
       throw new Error(`repo - deleteFile: ${error}`);
     }
   }
-
-  // async updateMetadata(fileName: string, bucketName: string, newMetadata: Partial<RecordMetadata> | Partial<SonogramMetadata>): Promise<UploadedObjectInfo | null> {
-  //   try {
-  //     return new Promise<UploadedObjectInfo>((resolve, reject) => {
-  //       const objectsStream = minioClient.listObjectsV2(bucketName, '', true);
-  //       objectsStream.on('data', async (obj) => {
-  //         const objName = obj.name;
-  //         const objSize = obj.size
-  //         if (objName === fileName) {
-  //           const fileStream = new PassThrough();
-  //           const chunks: Buffer[] = [];
-  //           fileStream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
-
-  //           const existingMetadata = await minioClient.statObject(bucketName, fileName).then(stat => stat.metaData);
-  //           const updatedMetadata = {
-  //             ...existingMetadata,
-  //             ...newMetadata,
-  //           };
-  //           console.log("updateMetadata repo - updatedMetadata", updatedMetadata);
-  //           fileStream.on('end', () => {
-
-  //             const buffer = Buffer.concat(chunks);
-
-  //             minioClient.putObject(bucketName, objName, buffer, objSize, updatedMetadata, function (err, objInfo) {
-  //               if (err) {
-  //                 console.error("putObjectPromise - error", err);
-  //                 reject(`metadata update failed: ${err.message}`);
-  //               } else {
-  //                 console.log(`metadata updated successfully ${objInfo} ${updatedMetadata}`);
-  //                 resolve(objInfo);
-  //               }
-  //             });
-  //           })
-  //         }
-  //       })
-  //     });
-  //   }
-  //   catch (error: any) {
-
-  //     if (error.code === 'NoSuchKey') {
-  //       console.error('Repository Error isFileExisted - not found:', error.message);
-  //       return null;
-  //     } else {
-  //       console.error('Repository Error isFileExisted:', error.message);
-  //       throw new Error(`repo - isFileExisted: ${error}`);
-  //     }
-  //   }
-  // }
-
 
   async updateMetadata(
     fileName: string,

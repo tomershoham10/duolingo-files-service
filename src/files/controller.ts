@@ -43,42 +43,19 @@ export default class MinioController {
       res.status(500).json({ error: error.message });
     }
   }
-  // async uploadFile(req: Request, res: Response) {
-  //   try {
 
-  //     const bucketName = req.body.bucketName;
-  //     const file = req.body.file;
-  //     const metadata = req.body.metadata;
-  //     console.log("files service controller - upload", bucketName, file, metadata);
-  //     this.manager.uploadFile(bucketName, file, metadata).then((etag) => {
-  //       res.status(200).json({ message: `File uploaded successfully: ${etag}` });
-  //     }).catch((error) => {
-  //       console.error('Error:', error);
-  //     });
-  //   } catch (error) {
-  //     res.status(500).json({ error: "Internal server error" });
-  //   }
-  // }
-
-  async getFileByName(req: Request, res: Response) {
-    const bucketName = req.params.bucketName;
-    const objectName = req.params.objectName;
-
+  async getFileByName(req: Request, res: Response): Promise<void> {
     try {
-      const fileData = await this.manager.getFileByName(bucketName, objectName);
-
-      if (fileData) {
-        res.setHeader('Content-Type', 'application/octet-stream');
-
-        res.send(fileData);
-      } else {
-        res.status(404).json({ error: "File not found" });
-      }
-    } catch (error: any) {
-      console.error('Controller getFileByName Error:', error.message);
-      res.status(500).json({ error: error.message });
+      const bucketName = req.params.bucketName;
+      const objectName = req.params.objectName;
+      const imageStream = await this.manager.getFileByName(bucketName, objectName);
+      console.log('controller - getimage', imageStream);
+      imageStream.pipe(res);
+    } catch (error) {
+      console.error('Error fetching image:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
-  }
+  };
 
   async getMetadataByETag(req: Request, res: Response) {
     const bucketName = req.params.bucketName;

@@ -10,6 +10,7 @@ const upload = multer({ storage: storage });
 
 filesRouter
     .get("/download/:bucketName/:objectName", controller.getFileByName.bind(controller))
+    .get("/getFileByName/:bucketName/:objectName", controller.getFileByName.bind(controller))
     .get("/get-files-by-bucket/:bucketName", controller.getAllFilesByBucket.bind(controller))
     .get("/get-metadata-by-etag/:bucketName/:etag", controller.getMetadataByETag.bind(controller))
     .get("/get-sonolist-url-by-record-id/:recordName", controller.getSonolistURLByRecordName.bind(controller))
