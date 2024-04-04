@@ -115,4 +115,13 @@ export default class MinioManager {
       throw new Error('Error in getBucketsList');
     }
   }
+
+  async renameObject(bucketName: string, oldObjectName: string, newObjectName: string): Promise<boolean> {
+    try {
+      return this.repository.renameObject(bucketName, oldObjectName, newObjectName);
+    } catch (error: any) {
+      console.error('Manager Error [renameObject]:', error.message);
+      throw new Error('Error in renameObject');
+    }
+  }
 }

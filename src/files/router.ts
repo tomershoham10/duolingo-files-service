@@ -25,6 +25,7 @@ filesRouter
 
 filesRouter
     .put("/updateMetadata/:bucketName/:fileName", controller.updateMetadata.bind(controller))
+    .put("/renameObject", controller.renameObject.bind(controller));
 
 filesRouter.delete("/delete/:objectName", controller.deleteFile.bind(controller));
 

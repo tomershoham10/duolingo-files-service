@@ -177,4 +177,18 @@ export default class MinioController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  async renameObject(req: Request, res: Response) {
+    try {
+      const bucketName = req.body.bucketName;
+      const oldObjectName = req.body.oldObjectName;
+      const newObjectName = req.body.newObjectName;
+      const status = await this.manager.renameObject(bucketName, oldObjectName, newObjectName);
+
+      status ? res.status(200).json({ message: "object was renamed successfully." }) : res.status(404).json({ message: "object was not found." });
+    } catch (error: any) {
+      console.error('Controller renameObject Error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

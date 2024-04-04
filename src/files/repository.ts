@@ -1,6 +1,7 @@
-import internal, { PassThrough, Stream } from 'stream';
+import { PassThrough, Stream } from 'stream';
 import { minioClient } from "../server.js";
 import { BucketItemFromList, ItemBucketMetadata, UploadedObjectInfo } from 'minio';
+import * as Minio from 'minio';
 import { RecordMetadata, SignatureTypes, SonarSystem, SonogramMetadata } from './model.js';
 
 export class MinioRepository {
@@ -31,6 +32,7 @@ export class MinioRepository {
       throw new Error(`repo - putObjectPromise: ${error}`);
     }
   }
+
 
   async uploadFile(bucketName: string, metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
     try {
@@ -79,6 +81,7 @@ export class MinioRepository {
       }
     });
   };
+
 
   async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[]> {
     try {
@@ -217,53 +220,14 @@ export class MinioRepository {
     }
   }
 
-  // async getSonolistURLByRecordName(recordName: string): Promise<string[]> {
-  //   try {
-  //     const bucketName = "records";
-  //     const objectsStream: Stream = minioClient.listObjects(bucketName, "");
-  //     let record: { name: string; id: string; metadata: Partial<RecordMetadata> };
-
-  //     const try1 = await new Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> }>((resolve, reject) => {
-  //       objectsStream.on('data', async () => {
-  //         try {
-  //           const stat = await minioClient.statObject(bucketName, recordName);
-  //           const metadata = stat.metaData as Partial<RecordMetadata>;
-  //           console.log("getSonolistURLByRecordName stat", stat);
-  //           record = { name: recordName, id: stat.etag, metadata: metadata };
-  //           console.log("getSonolistURLByRecordName record 1", record);
-  //         } catch (error) {
-  //           console.error(`Error getting metadata for ${recordName}:`, error);
-  //           reject(`Error getting metadata for ${recordName}, ${error}`);
-  //         }
-  //       });
-
-  //       objectsStream.on('end', () => {
-  //         console.log("getSonolistURLByRecordName record 2", record);
-  //         resolve(record);
-  //       });
-
-  //       objectsStream.on('error', (error) => {
-  //         console.error("Error getAllFilesByBucket:", error);
-  //         reject(error);
-  //       });
-  //     });
-
-  //     console.log("getSonolistURLByRecordName try1", try1);
-  //     const sonolist = try1.metadata.sonograms_ids;
-  //     console.log("getSonolistURLByRecordName", sonolist);
-  //     return sonolist || [];
-  //   } catch (error: any) {
-  //     console.error('Repository Error:', error.message);
-  //     throw new Error(`repo - getAllFilesByBucket: ${error}`);
-  //   }
-  // }
-
   async getSonolistByRecordName(recordName: string): Promise<NodeJS.ReadableStream[]> {
     try {
       const bucketName = "records";
       const stat = await minioClient.statObject(bucketName, recordName);
       if (!!!stat) return [];
       const metadata = stat.metaData as Partial<RecordMetadata>;
+      console.log(".sonograms_ids", metadata.sonograms_ids, metadata.sonograms_ids?.length);
+      if (metadata.sonograms_ids === undefined || metadata.sonograms_ids.length <= 0) return [];
       let sonolist: string[] = [];
       if (typeof metadata.sonograms_ids === 'string') {
         sonolist = [metadata.sonograms_ids];
@@ -273,17 +237,27 @@ export class MinioRepository {
       console.log("getSonolistByRecordName repo", sonolist);
       if (!!!sonolist) return [];
 
-      const promises = sonolist.map(fileName => this.getFileByName('sonograms', fileName));
-      const fileStreams = await Promise.all(promises);
-      console.log("getSonolistByRecordName repo - fileStreams", fileStreams);
-      return fileStreams;
+      const streams: NodeJS.ReadableStream[] = [];
+      for (const fileName of sonolist) {
+        const stream = await this.getFileByName('sonograms', fileName);
+        streams.push(stream);
+      }
+
+      console.log("getSonolistByRecordName repo - streams", streams);
+      return streams;
+
+
+
+      // const promises = sonolist.map(fileName => this.getFileByName('sonograms', fileName));
+      // const fileStreams = await Promise.all(promises);
+      // console.log("getSonolistByRecordName repo - fileStreams", fileStreams);
+      // return fileStreams;
 
     } catch (error: any) {
       console.error('Repository Error:', error.message);
       throw new Error(`repo - getAllFilesByBucket: ${error}`);
     }
   }
-
 
   async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
     try {
@@ -301,46 +275,6 @@ export class MinioRepository {
       }
     }
   }
-
-  // async getSonolistByRecordName(recordName: string): Promise<string> {
-  //   try {
-  //     const bucketName = "records";
-  //     const objectsStream: Stream = minioClient.listObjects(bucketName, "");
-  //     const data: Buffer[] = [];
-  //     let record: { name: string; id: string; metadata: RecordMetadata | SonogramMetadata };
-
-  //     const try1 = await new Promise<string>((resolve, reject) => {
-  //       objectsStream.on('data', (object) => {
-  //         minioClient.statObject(bucketName, recordName)
-  //           .then((stat) => {
-  //             console.log("stat", stat);
-  //             const metadata = stat.metaData as RecordMetadata | SonogramMetadata;
-  //             record = { name: object.name, id: stat.etag, metadata };
-  //           })
-  //           .catch((error) => {
-  //             console.error(`Error getting metadata for ${object.name}:`, error);
-  //             throw new Error(`Error getting metadata for ${object.name}, ${error}`);
-  //           });
-
-  //       })
-  //       objectsStream.on('end', () => {
-  //         const fileData = Buffer.concat(data);
-  //         console.log("fileData", fileData);
-  //         resolve(fileData.toString());
-  //       });
-  //       objectsStream.on('error', (error) => {
-  //         console.error("Error getAllFilesByBucket:", error);
-  //         reject(error);
-  //       });
-  //     });
-
-  //     console.log("getSonolistByRecordName", try1);
-  //     return 'a';
-  //   } catch (error: any) {
-  //     console.error('Repository Error:', error.message);
-  //     throw new Error(`repo - getAllFilesByBucket: ${error}`);
-  //   }
-  // }
 
   async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
     try {
@@ -437,4 +371,30 @@ export class MinioRepository {
       throw new Error(`repo - getBucketsList: ${error}`);
     }
   }
+
+  async renameObject(bucketName: string, oldObjectName: string, newObjectName: string): Promise<boolean> {
+    try {
+      // Copy the object to the same bucket with the new name
+      var conds = new Minio.CopyConditions();
+      const stat = await minioClient.statObject(bucketName, oldObjectName);
+      conds.setMatchETag(stat.etag);
+      minioClient.copyObject(bucketName, newObjectName, `/${bucketName}/${oldObjectName}`, conds, function (e, data) {
+        if (e) {
+          return console.log(e)
+        }
+        console.log('Successfully copied the object:')
+        console.log('etag = ' + data.etag + ', lastModified = ' + data.lastModified)
+      });
+
+      // Remove the old object
+      await minioClient.removeObject(bucketName, oldObjectName);
+
+      console.log(`Object "${oldObjectName}" renamed to "${newObjectName}" successfully.`);
+      return true;
+    } catch (error) {
+      console.error('Error renaming object:', error);
+      return false;
+    }
+  }
 }
+
