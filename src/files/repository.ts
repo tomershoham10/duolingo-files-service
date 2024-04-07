@@ -1,8 +1,8 @@
-import { PassThrough, Stream } from 'stream';
+import internal, { PassThrough, Stream } from 'stream';
 import { minioClient } from "../server.js";
 import { BucketItemFromList, ItemBucketMetadata, UploadedObjectInfo } from 'minio';
 import * as Minio from 'minio';
-import { RecordMetadata, SignatureTypes, SonarSystem, SonogramMetadata } from './model.js';
+import { RecordMetadata, SignatureTypes, SonarSystem, SonogramMetadata, SonolistStream } from './model.js';
 
 export class MinioRepository {
 
@@ -70,7 +70,7 @@ export class MinioRepository {
     }
   };
 
-  async getFileByName(bucketName: string, fileName: string): Promise<NodeJS.ReadableStream> {
+  async getFileByName(bucketName: string, fileName: string): Promise<internal.Readable> {
     return new Promise(async (resolve, reject) => {
       try {
         const stream = await minioClient.getObject(bucketName, fileName);
@@ -220,7 +220,7 @@ export class MinioRepository {
     }
   }
 
-  async getSonolistByRecordName(recordName: string): Promise<NodeJS.ReadableStream[]> {
+  async getSonolistNamesByRecordName(recordName: string): Promise<string[]> {
     try {
       const bucketName = "records";
       const stat = await minioClient.statObject(bucketName, recordName);
@@ -234,17 +234,21 @@ export class MinioRepository {
       } else if (Array.isArray(metadata.sonograms_ids)) {
         sonolist = metadata.sonograms_ids;
       }
-      console.log("getSonolistByRecordName repo", sonolist);
-      if (!!!sonolist) return [];
+      // console.log("getSonolistByRecordName repo", sonolist);
+      return sonolist;
+      // const filesStreams: SonolistStream[] = [];
+      // for (const fileName of sonolist) {
+      //   const stream = await this.getFileByName('sonograms', fileName);
+      //   const sonoStream = { fileName: fileName, fileStream: stream };
+      //   filesStreams.push(sonoStream);
+      //   filesStreams.push(sonoStream);
+      //   // const url = await createBlobUrlFromStream(stream);
+      //   // console.log("getSonolistByRecordName url", url);
+      //   // urls.push(url);
+      // }
 
-      const streams: NodeJS.ReadableStream[] = [];
-      for (const fileName of sonolist) {
-        const stream = await this.getFileByName('sonograms', fileName);
-        streams.push(stream);
-      }
-
-      console.log("getSonolistByRecordName repo - streams", streams);
-      return streams;
+      // console.log("getSonolistByRecordName repo - filesStreams", filesStreams);
+      // return filesStreams;
 
 
 
@@ -398,3 +402,28 @@ export class MinioRepository {
   }
 }
 
+// async function createBlobUrlFromStream(stream: NodeJS.ReadableStream): Promise<string> {
+//   return new Promise((resolve, reject) => {
+//     const chunks: Uint8Array[] = [];
+//     stream.on('data', (chunk: Uint8Array) => {
+//       chunks.push(chunk);
+//     });
+
+//     stream.on('end', () => {
+//       const buffer = Buffer.concat(chunks);
+
+//       // Create a Blob from the Buffer
+//       const blob = new Blob([buffer], { type: 'image/*' });
+
+//       // Create Blob URL
+//       const blobURL = URL.createObjectURL(blob);
+
+//       // Clean up blobURL when done
+//       resolve(blobURL);
+//     });
+
+//     stream.on('error', (err: Error) => {
+//       reject(err);
+//     });
+//   });
+// }

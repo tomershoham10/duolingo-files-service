@@ -1,3 +1,5 @@
+import internal from "stream";
+
 export enum SignatureTypes {
   PASSIVE = 'passive',
   ACTIVE = 'active',
@@ -44,4 +46,10 @@ export interface SonogramMetadata {
   sonogram_type: SonarSystem;
   fft: number;
   bw: number;
+}
+
+export interface SonolistStream {
+  fileName: string;
+  // metadata: Partial<SonogramMetadata>;
+  fileStream: internal.Readable;
 }

@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import MinioManager from "./manager.js";
 import { RecordMetadata, SonogramMetadata } from "./model.js";
+import { stringify } from 'flatted';
 
 export default class MinioController {
   private manager: MinioManager;
@@ -93,22 +94,30 @@ export default class MinioController {
     }
   }
 
-  async getSonolistByRecordName(req: Request, res: Response) {
+  async getSonolistNamesByRecordName(req: Request, res: Response) {
     try {
       const recordName = req.params.recordName;
-      console.log("files service controller - getSonolistByRecordName recordName", recordName);
+      console.log("files service controller - getSonolistNamesByRecordName recordName", recordName);
 
-      const fileStreams = await this.manager.getSonolistByRecordName(recordName);
-      console.log("files service controller - getSonolistByRecordName fileStreams", fileStreams);
-      if (fileStreams.length <= 0) { res.status(404).json({ error: "no sonograms" }) };
-      fileStreams.forEach(fileStream => {
-        fileStream.pipe(res, { end: false });
+      const sonograms = await this.manager.getSonolistNamesByRecordName(recordName);
+      console.log("files service controller - getSonolistNamesByRecordName sonograms", sonograms);
+      (sonograms.length <= 0)
+        ? res.status(404).json({ error: "no sonograms" })
+        : res.status(200).json({ sonograms });
+
+      // Close response stream when all files are streamed
+      res.on('finish', () => {
+        console.log('All files streamed');
       });
-      // Close the response stream when all file streams are piped
-      Promise.all(fileStreams.map(stream => new Promise(resolve => stream.on('end', resolve)))).then(() => {
-        res.end();
-      });
-      ;
+
+      // fileStreams.forEach(fileStream => {
+      //   fileStream.pipe(res, { end: false });
+      // });
+      // // Close the response stream when all file streams are piped
+      // Promise.all(fileStreams.map(stream => new Promise(resolve => stream.on('end', resolve)))).then(() => {
+      //   res.end();
+      // });
+
     } catch (error: any) {
       console.error('Controller getSonolistByRecordName Error:', error.message);
       res.status(500).json({ error: error.message });

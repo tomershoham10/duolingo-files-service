@@ -33,7 +33,7 @@ const configureMiddlewares = (app: Express) => {
   // });
   app.use(
     cors({
-      origin: "http://localhost:3000",
+      origin: ["http://localhost:3000", "blob:"],
       credentials: true,
       exposedHeaders: ["Authorization"],
     })

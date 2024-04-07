@@ -13,7 +13,7 @@ filesRouter
     .get("/getFileByName/:bucketName/:objectName", controller.getFileByName.bind(controller))
     .get("/get-files-by-bucket/:bucketName", controller.getAllFilesByBucket.bind(controller))
     .get("/get-metadata-by-etag/:bucketName/:etag", controller.getMetadataByETag.bind(controller))
-    .get("/get-sonolist-by-record-id/:recordName", controller.getSonolistByRecordName.bind(controller))
+    .get("/get-sonolist-names-by-record-id/:recordName", controller.getSonolistNamesByRecordName.bind(controller))
     .get("/isFileExisted/:bucketName/:fileName", controller.isFileExisted.bind(controller))
     .get("/buckets-list", controller.getBucketsList.bind(controller));
 

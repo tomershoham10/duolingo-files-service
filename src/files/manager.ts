@@ -1,7 +1,8 @@
 // manager.ts
 import { BucketItemFromList, UploadedObjectInfo } from "minio";
 import { MinioRepository } from "./repository.js";
-import { RecordMetadata, SonogramMetadata } from "./model.js";
+import { RecordMetadata, SonogramMetadata, SonolistStream } from "./model.js";
+import internal from "stream";
 
 export default class MinioManager {
   private repository: MinioRepository;
@@ -28,7 +29,7 @@ export default class MinioManager {
     }
   }
 
-  async getFileByName(bucketName: string, imageName: string): Promise<NodeJS.ReadableStream> {
+  async getFileByName(bucketName: string, imageName: string): Promise<internal.Readable> {
     const imageUrl = await this.repository.getFileByName(bucketName, imageName);
     return imageUrl;
   };
@@ -57,12 +58,12 @@ export default class MinioManager {
     }
   }
 
-  async getSonolistByRecordName(recordId: string): Promise<NodeJS.ReadableStream[]> {
+  async getSonolistNamesByRecordName(recordId: string): Promise<string[]> {
     try {
-      const files = await this.repository.getSonolistByRecordName(recordId);
-      return files;
+      const filesNames = await this.repository.getSonolistNamesByRecordName(recordId);
+      return filesNames;
     } catch (error: any) {
-      console.error('Manager Error [getSonolistByRecordName]:', error.message);
+      console.error('Manager Error [getSonolistNamesByRecordName]:', error.message);
       throw new Error(error.message);
     }
   }
