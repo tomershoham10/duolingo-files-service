@@ -49,8 +49,13 @@ export default class MinioController {
     try {
       const bucketName = req.params.bucketName;
       const objectName = req.params.objectName;
-      const imageStream = await this.manager.getFileByName(bucketName, objectName);
+      const objectData = await this.manager.getFileByName(bucketName, objectName);
+      const imageStream = objectData.stream;
+      const metaData = objectData.metadata;
       console.log('controller - getimage', imageStream);
+      res.setHeader('metaData', JSON.stringify(metaData));
+
+      // Pipe the image stream to the response
       imageStream.pipe(res);
     } catch (error) {
       console.error('Error fetching image:', error);

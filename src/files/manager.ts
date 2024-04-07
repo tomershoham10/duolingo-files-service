@@ -29,7 +29,7 @@ export default class MinioManager {
     }
   }
 
-  async getFileByName(bucketName: string, imageName: string): Promise<internal.Readable> {
+  async getFileByName(bucketName: string, imageName: string): Promise<{ stream: internal.Readable, metadata: RecordMetadata | SonogramMetadata }> {
     const imageUrl = await this.repository.getFileByName(bucketName, imageName);
     return imageUrl;
   };
