@@ -1,7 +1,11 @@
+.vscode
 .git
 .gitignore
+.env
+node_modules
+dist
 Dockerfile*
 docker-compose*
 README.md
 LICENSE
-.vscode
+*.tar
