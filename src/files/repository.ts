@@ -75,7 +75,7 @@ export class MinioRepository {
       try {
         const stream = await minioClient.getObject(bucketName, fileName);
         const statPromise = await minioClient.statObject(bucketName, fileName)
-        console.log('getFileByName', bucketName, '/', fileName, ': ', stream);
+        console.log('getFileByName', bucketName, '/', fileName);
         const metadata = statPromise.metaData as RecordMetadata | SonogramMetadata;
         resolve({ stream: stream, metadata: metadata });
       } catch (err) {

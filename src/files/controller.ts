@@ -2,7 +2,8 @@
 import { Request, Response } from "express";
 import MinioManager from "./manager.js";
 import { RecordMetadata, SonogramMetadata } from "./model.js";
-import { stringify } from 'flatted';
+import FormData from 'form-data';
+import axios from "axios";
 
 export default class MinioController {
   private manager: MinioManager;
@@ -59,6 +60,50 @@ export default class MinioController {
       imageStream.pipe(res);
     } catch (error) {
       console.error('Error fetching image:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  };
+
+  async downloadEncryptedZip(req: Request, res: Response): Promise<void> {
+    try {
+      const bucketName = req.params.bucketName;
+      const objectName = req.params.objectName;
+      const objectData = await this.manager.getFileByName(bucketName, objectName);
+      const imageStream = objectData.stream;
+      const metaData = objectData.metadata;
+      // console.log('controller - getimage', imageStream);
+      res.setHeader('metaData', JSON.stringify(metaData));
+      const form = new FormData();
+
+      form.append('file', imageStream, { filename: objectName });
+      form.append('metadata', JSON.stringify(metaData));
+
+      const pythonServiceUrl = 'http://zips-encrypting-service:5000/upload';
+      const response = await axios.post(pythonServiceUrl, form, {
+        headers: {
+          ...form.getHeaders(),
+        },
+        responseType: 'stream', // Specify response type as 'stream' to handle binary data as a stream
+      });
+
+      console.log('downloadEncryptedZip', response);
+      // Check if the response status is OK
+      if (response.status !== 200) {
+        res.status(response.status).json({ error: 'Failed to download file' });
+        return;
+      }
+
+      // Set the appropriate headers for the zip file
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', 'attachment; filename=output.zip');
+
+      // Pipe the response stream directly to the client
+      response.data.pipe(res);
+
+
+      // res.status(200).json({ message: 'File sent to Python service successfully' });
+    } catch (error: any) {
+      console.error('Error fetching image:', error.message);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   };
