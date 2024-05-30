@@ -78,7 +78,7 @@ export default class MinioController {
       form.append('file', imageStream, { filename: objectName });
       form.append('metadata', JSON.stringify(metaData));
 
-      const pythonServiceUrl = 'http://zips-encrypting-service:5000/upload';
+      const pythonServiceUrl = 'http://zips-encrypting-service:5000/api/upload';
       const response = await axios.post(pythonServiceUrl, form, {
         headers: {
           ...form.getHeaders(),
