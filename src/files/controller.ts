@@ -1,9 +1,14 @@
 // controller.ts
+import axios from "axios";
+import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import MinioManager from "./manager.js";
 import { RecordMetadata, SonogramMetadata } from "./model.js";
 import FormData from 'form-data';
-import axios from "axios";
+import dotenv from 'dotenv';
+dotenv.config();
+const passwordKey = process.env.PASSWORD_KEY || 'password';
+
 
 export default class MinioController {
   private manager: MinioManager;
@@ -59,26 +64,41 @@ export default class MinioController {
       // Pipe the image stream to the response
       imageStream.pipe(res);
     } catch (error) {
-      console.error('Error fetching image:', error);
+      console.error('Error fetching image (controller):', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   };
 
   async downloadEncryptedZip(req: Request, res: Response): Promise<void> {
     try {
+      const pythonServiceUrl = 'http://zips-encrypting-service:5000/api/encrypt-zip/upload';
+      const authServiceUrl = 'http://authentication-service:4000/api/auth/getRecordZipPassword';
+
+
       const bucketName = req.params.bucketName;
       const objectName = req.params.objectName;
       const objectData = await this.manager.getFileByName(bucketName, objectName);
       const imageStream = objectData.stream;
       const metaData = objectData.metadata;
-      // console.log('controller - getimage', imageStream);
-      res.setHeader('metaData', JSON.stringify(metaData));
+
+
+      const zipPasswordResponse = await axios.get(`${authServiceUrl}/${objectName}`);
+      const zipPassword = zipPasswordResponse.data?.zipPassword;
+
+
+      const encryptedMetadata = jwt.sign({ ...metaData, zipPassword: zipPassword }, passwordKey, {
+        expiresIn: "10m",
+      });
+
+      res.setHeader('metadata', encryptedMetadata);
       const form = new FormData();
 
       form.append('file', imageStream, { filename: objectName });
+
       form.append('metadata', JSON.stringify(metaData));
 
-      const pythonServiceUrl = 'http://zips-encrypting-service:5000/api/upload';
+      form.append('zipPassword', JSON.stringify(zipPassword));
+
       const response = await axios.post(pythonServiceUrl, form, {
         headers: {
           ...form.getHeaders(),
@@ -86,7 +106,6 @@ export default class MinioController {
         responseType: 'stream', // Specify response type as 'stream' to handle binary data as a stream
       });
 
-      console.log('downloadEncryptedZip', response);
       // Check if the response status is OK
       if (response.status !== 200) {
         res.status(response.status).json({ error: 'Failed to download file' });
@@ -103,7 +122,7 @@ export default class MinioController {
 
       // res.status(200).json({ message: 'File sent to Python service successfully' });
     } catch (error: any) {
-      console.error('Error fetching image:', error.message);
+      console.error('Error fetching image (downloadEncryptedZip):', error.message);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   };

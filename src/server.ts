@@ -35,7 +35,7 @@ const configureMiddlewares = (app: Express) => {
     cors({
       origin: ["http://localhost:3000", "blob:"],
       credentials: true,
-      exposedHeaders: ["Authorization"],
+      exposedHeaders: ["Authorization","metaData"],
     })
   );
   app.use(bodyParser.json({ limit: '200mb' }));
