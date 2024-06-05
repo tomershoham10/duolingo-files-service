@@ -71,17 +71,22 @@ export class MinioRepository {
   };
 
   async getFileByName(bucketName: string, fileName: string): Promise<{ stream: internal.Readable, metadata: RecordMetadata | SonogramMetadata }> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const stream = await minioClient.getObject(bucketName, fileName);
-        const statPromise = await minioClient.statObject(bucketName, fileName)
-        console.log('getFileByName', bucketName, '/', fileName);
-        const metadata = statPromise.metaData as RecordMetadata | SonogramMetadata;
-        resolve({ stream: stream, metadata: metadata });
-      } catch (err) {
-        reject(`getFileByName repo - ${err}`);
-      }
-    });
+    try {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const stream = await minioClient.getObject(bucketName, fileName);
+          const statPromise = await minioClient.statObject(bucketName, fileName)
+          console.log('getFileByName', bucketName, '/', fileName);
+          const metadata = statPromise.metaData as RecordMetadata | SonogramMetadata;
+          resolve({ stream: stream, metadata: metadata });
+        } catch (err) {
+          reject(`getFileByName repo - ${err}`);
+        }
+      });
+    } catch (error: any) {
+      console.error('Repository Error (getFileByName):', error.message);
+      throw new Error(`repo - getFileByName: ${error}`);
+    }
   };
 
 

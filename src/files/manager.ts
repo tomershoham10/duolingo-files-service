@@ -43,7 +43,7 @@ export default class MinioManager {
       const objectInfo = await this.repository.getFileMetadataByETag(bucketName, etag);
       return objectInfo;
     } catch (error: any) {
-      console.error('Error retrieving file metadata:', error.message);
+      console.error('Error retrieving file metadata (manager):', error.message);
       throw new Error(`getFileMetadataByETag: ${error}`);
     }
   }
