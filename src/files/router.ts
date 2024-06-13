@@ -1,8 +1,8 @@
-import express from "express";
+import { Router } from "express";
 import multer from "multer";
 import MinioController from "./controller.js";
 
-const filesRouter = express.Router();
+const filesRouter = Router();
 const controller = new MinioController();
 
 const storage = multer.memoryStorage();

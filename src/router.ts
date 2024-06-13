@@ -1,8 +1,7 @@
-import express, { Router } from "express";
-import Express from "express";
+import { Router, Request, Response } from "express";
 import filesRouter from "./files/router.js";
 
-const router: Router = express.Router();
+const router = Router();
 // const requestLoggerMiddleware: express.RequestHandler = (
 //   req: express.Request,
 //   _res: express.Response,
@@ -17,7 +16,7 @@ const router: Router = express.Router();
 // router.use(requestLoggerMiddleware);
 
 
-router.get("/health", (_req: Express.Request, res: Express.Response) => {
+router.get("/health", (_req: Request, res: Response) => {
   console.log("health");
   res.status(200).send("Alive");
 });

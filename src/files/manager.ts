@@ -2,7 +2,7 @@
 import { BucketItemFromList, UploadedObjectInfo } from "minio";
 import { MinioRepository } from "./repository.js";
 import { RecordMetadata, SonogramMetadata, SonolistStream } from "./model.js";
-import internal from "stream";
+import { Readable } from "stream";
 
 export default class MinioManager {
   private repository: MinioRepository;
@@ -29,7 +29,7 @@ export default class MinioManager {
     }
   }
 
-  async getFileByName(bucketName: string, imageName: string): Promise<{ stream: internal.Readable, metadata: RecordMetadata | SonogramMetadata }> {
+  async getFileByName(bucketName: string, imageName: string): Promise<{ stream: Readable, metadata: RecordMetadata | SonogramMetadata }> {
     const imageUrl = await this.repository.getFileByName(bucketName, imageName);
     return imageUrl;
   };

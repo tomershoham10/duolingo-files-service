@@ -1,4 +1,4 @@
-import internal from "stream";
+import { Readable } from "stream";
 
 export enum SignatureTypes {
   PASSIVE = 'passive',
@@ -51,5 +51,5 @@ export interface SonogramMetadata {
 export interface SonolistStream {
   fileName: string;
   // metadata: Partial<SonogramMetadata>;
-  fileStream: internal.Readable;
+  fileStream: Readable;
 }

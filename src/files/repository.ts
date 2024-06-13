@@ -1,7 +1,7 @@
-import internal, { PassThrough, Stream } from 'stream';
-import { minioClient } from "../server.js";
-import { BucketItemFromList, ItemBucketMetadata, UploadedObjectInfo } from 'minio';
 import * as Minio from 'minio';
+import { minioClient } from "../server.js";
+import { Readable, PassThrough, Stream } from 'stream';
+import { BucketItemFromList, ItemBucketMetadata, UploadedObjectInfo } from 'minio';
 import { RecordMetadata, SignatureTypes, SonarSystem, SonogramMetadata, SonolistStream } from './model.js';
 
 export class MinioRepository {
@@ -70,7 +70,7 @@ export class MinioRepository {
     }
   };
 
-  async getFileByName(bucketName: string, fileName: string): Promise<{ stream: internal.Readable, metadata: RecordMetadata | SonogramMetadata }> {
+  async getFileByName(bucketName: string, fileName: string): Promise<{ stream: Readable, metadata: RecordMetadata | SonogramMetadata }> {
     try {
       return new Promise(async (resolve, reject) => {
         try {

@@ -1,12 +1,12 @@
 import express from "express";
 import cors from "cors";
 import multer from "multer";
-import bodyParser from "body-parser";
+import { json, urlencoded } from "body-parser";
 import router from "./router.js";
 import config from "./utils/config.js";
 
 import { Client } from "minio";
-import { errorHandler } from "./middleware/errorHandler.js";
+// import { errorHandler } from "./middleware/errorHandler.js";
 import { Express } from "express-serve-static-core";
 
 const startServer = () => {
@@ -35,11 +35,12 @@ const configureMiddlewares = (app: Express) => {
     cors({
       origin: ["http://localhost:3000", "blob:"],
       credentials: true,
-      exposedHeaders: ["Authorization","metaData"],
+      exposedHeaders: ["Authorization", "metaData"],
     })
   );
-  app.use(bodyParser.json({ limit: '200mb' }));
-  app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
+  app.use(json({ limit: '200mb' })); //bodyparser
+  app.use(urlencoded({ limit: '200mb', extended: true })); //bodyparser
+  
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   // app.use(errorHandler);
