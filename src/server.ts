@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import multer from "multer";
-import { json, urlencoded } from "body-parser";
+import bodyParser from "body-parser";
 import router from "./router.js";
 import config from "./utils/config.js";
 
@@ -38,9 +38,8 @@ const configureMiddlewares = (app: Express) => {
       exposedHeaders: ["Authorization", "metaData"],
     })
   );
-  app.use(json({ limit: '200mb' })); //bodyparser
-  app.use(urlencoded({ limit: '200mb', extended: true })); //bodyparser
-  
+  app.use(bodyParser.json({ limit: '200mb' }));
+  app.use(bodyParser.urlencoded({ limit: '200mb', extended: true }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   // app.use(errorHandler);

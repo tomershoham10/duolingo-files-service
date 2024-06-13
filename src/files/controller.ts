@@ -1,6 +1,6 @@
 // controller.ts
 import axios from "axios";
-import { sign } from "jsonwebtoken";
+import jwt  from "jsonwebtoken";
 import { Request, Response } from "express";
 import MinioManager from "./manager.js";
 import { RecordMetadata, SonogramMetadata } from "./model.js";
@@ -86,7 +86,7 @@ export default class MinioController {
       const zipPassword = zipPasswordResponse.data?.zipPassword;
 
 
-      const encryptedMetadata = sign({ ...metaData, zipPassword: zipPassword }, passwordKey, {
+      const encryptedMetadata = jwt.sign({ ...metaData, zipPassword: zipPassword }, passwordKey, {
         expiresIn: "10m",
       });
 
