@@ -1,6 +1,5 @@
-// controller.ts
 import axios from "axios";
-import jwt  from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import MinioManager from "./manager.js";
 import { RecordMetadata, SonogramMetadata } from "./model.js";
@@ -11,12 +10,7 @@ const passwordKey = process.env.PASSWORD_KEY || 'password';
 
 
 export default class MinioController {
-  private manager: MinioManager;
-
-  constructor() {
-    this.manager = new MinioManager();
-  }
-  async uploadFile(req: Request, res: Response) {
+  static async uploadFile(req: Request, res: Response) {
     try {
       console.log("controller - uploadFile", req.file, "controller - uploadFile body", req.body);
       const bucketName: string = req.body.bucketName;
@@ -31,7 +25,7 @@ export default class MinioController {
       if (Array.isArray(files)) {
         // Handle multiple files
         const uploadPromises = files.map(async (file) => {
-          return this.manager.uploadFile(bucketName, metadata, file);
+          return MinioManager.uploadFile(bucketName, metadata, file);
         });
 
         const results = await Promise.all(uploadPromises);
@@ -39,7 +33,7 @@ export default class MinioController {
         res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: results });
       } else {
         // Handle single file
-        const result = await this.manager.uploadFile(bucketName, metadata, files);
+        const result = await MinioManager.uploadFile(bucketName, metadata, files);
         console.log('controller - uploadFile - Single file uploaded successfully:', result);
         res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: result });
       }
@@ -51,11 +45,11 @@ export default class MinioController {
     }
   }
 
-  async getFileByName(req: Request, res: Response): Promise<void> {
+  static async getFileByName(req: Request, res: Response): Promise<void> {
     try {
       const bucketName = req.params.bucketName;
       const objectName = req.params.objectName;
-      const objectData = await this.manager.getFileByName(bucketName, objectName);
+      const objectData = await MinioManager.getFileByName(bucketName, objectName);
       const imageStream = objectData.stream;
       const metaData = objectData.metadata;
       console.log('controller - getimage', imageStream);
@@ -69,7 +63,7 @@ export default class MinioController {
     }
   };
 
-  async downloadEncryptedZip(req: Request, res: Response): Promise<void> {
+  static async downloadEncryptedZip(req: Request, res: Response): Promise<void> {
     try {
       const pythonServiceUrl = 'http://zips-encrypting-service:5000/api/encrypt-zip/upload';
       const authServiceUrl = 'http://authentication-service:4000/api/auth/getRecordZipPassword';
@@ -77,7 +71,7 @@ export default class MinioController {
 
       const bucketName = req.params.bucketName;
       const objectName = req.params.objectName;
-      const objectData = await this.manager.getFileByName(bucketName, objectName);
+      const objectData = await MinioManager.getFileByName(bucketName, objectName);
       const imageStream = objectData.stream;
       const metaData = objectData.metadata;
 
@@ -127,12 +121,12 @@ export default class MinioController {
     }
   };
 
-  async getMetadataByETag(req: Request, res: Response) {
+  static async getMetadataByETag(req: Request, res: Response) {
     const bucketName = req.params.bucketName;
     const etag = req.params.etag;
 
     try {
-      const objectInfo = await this.manager.getFileMetadataByETag(bucketName, etag);
+      const objectInfo = await MinioManager.getFileMetadataByETag(bucketName, etag);
 
       if (!!objectInfo) {
 
@@ -146,12 +140,12 @@ export default class MinioController {
     }
   }
 
-  async getAllFilesByBucket(req: Request, res: Response) {
+  static async getAllFilesByBucket(req: Request, res: Response) {
     try {
       const bucketName = req.params.bucketName;
       console.log("files service controller - get all files by bucket", bucketName);
 
-      const files = await this.manager.getAllFilesByBucket(bucketName);
+      const files = await MinioManager.getAllFilesByBucket(bucketName);
       console.log("files service controller - get all files by bucket", files);
       files ?
         res.status(200).json({ files }) :
@@ -163,12 +157,12 @@ export default class MinioController {
     }
   }
 
-  async getSonolistNamesByRecordName(req: Request, res: Response) {
+  static async getSonolistNamesByRecordName(req: Request, res: Response) {
     try {
       const recordName = req.params.recordName;
       console.log("files service controller - getSonolistNamesByRecordName recordName", recordName);
 
-      const sonograms = await this.manager.getSonolistNamesByRecordName(recordName);
+      const sonograms = await MinioManager.getSonolistNamesByRecordName(recordName);
       console.log("files service controller - getSonolistNamesByRecordName sonograms", sonograms);
       (sonograms.length <= 0)
         ? res.status(404).json({ error: "no sonograms" })
@@ -193,13 +187,13 @@ export default class MinioController {
     }
   }
 
-  async isFileExisted(req: Request, res: Response) {
+  static async isFileExisted(req: Request, res: Response) {
     try {
       const fileName = req.params.fileName;
       const bucketName = req.params.bucketName;
       console.log("files service controller - isFileExisted", fileName, bucketName);
 
-      const status = await this.manager.isFileExisted(fileName, bucketName);
+      const status = await MinioManager.isFileExisted(fileName, bucketName);
       console.log("files service controller -isFileExisted status", status);
       res.status(200).json({ status });
     } catch (error: any) {
@@ -208,12 +202,12 @@ export default class MinioController {
     }
   }
 
-  async updateMetadata(req: Request, res: Response) {
+  static async updateMetadata(req: Request, res: Response) {
     const fileName = req.params.fileName;
     const bucketName = req.params.bucketName;
     const newMeata = req.body.metadata;
     try {
-      const file = await this.manager.updateMetadata(fileName, bucketName, newMeata);
+      const file = await MinioManager.updateMetadata(fileName, bucketName, newMeata);
       console.log("files service controller -updateMetadata updated file", file);
       res.status(200).json({ file });
     } catch (error: any) {
@@ -222,11 +216,11 @@ export default class MinioController {
     }
   }
 
-  async deleteFile(req: Request, res: Response) {
+  static async deleteFile(req: Request, res: Response) {
     const bucketName = req.body.bucketName;
     const objectName = req.body.objectName;
     try {
-      await this.manager.deleteFile(bucketName, objectName);
+      await MinioManager.deleteFile(bucketName, objectName);
       res.status(200).json({ message: "File deleted successfully" });
     } catch (error: any) {
       console.error('Controller deleteFile Error:', error.message);
@@ -234,11 +228,11 @@ export default class MinioController {
     }
   }
 
-  async createBucket(req: Request, res: Response) {
+  static async createBucket(req: Request, res: Response) {
     const bucketName = req.body.bucketName;
     console.log("new bucket request:", req.body, bucketName);
     try {
-      await this.manager.createBucket(bucketName);
+      await MinioManager.createBucket(bucketName);
       res.status(201).json({ message: "Bucket created successfully" });
     } catch (error: any) {
       console.error('Controller createBucket Error:', error.message);
@@ -246,9 +240,9 @@ export default class MinioController {
     }
   }
 
-  async getBucketsList(_req: Request, res: Response) {
+  static async getBucketsList(_req: Request, res: Response) {
     try {
-      const buckets = await this.manager.getBucketsList();
+      const buckets = await MinioManager.getBucketsList();
       res.status(200).json({ buckets });
     } catch (error: any) {
       console.error('Controller getBucketsList Error:', error.message);
@@ -256,12 +250,12 @@ export default class MinioController {
     }
   }
 
-  async renameObject(req: Request, res: Response) {
+  static async renameObject(req: Request, res: Response) {
     try {
       const bucketName = req.body.bucketName;
       const oldObjectName = req.body.oldObjectName;
       const newObjectName = req.body.newObjectName;
-      const status = await this.manager.renameObject(bucketName, oldObjectName, newObjectName);
+      const status = await MinioManager.renameObject(bucketName, oldObjectName, newObjectName);
 
       status ? res.status(200).json({ message: "object was renamed successfully." }) : res.status(404).json({ message: "object was not found." });
     } catch (error: any) {

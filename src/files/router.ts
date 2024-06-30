@@ -3,31 +3,30 @@ import multer from "multer";
 import MinioController from "./controller.js";
 
 const filesRouter = Router();
-const controller = new MinioController();
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 filesRouter
-    .get("/download/:bucketName/:objectName", controller.getFileByName.bind(controller))
-    .get("/downloadEncryptedZip/:bucketName/:objectName", controller.downloadEncryptedZip.bind(controller))
-    .get("/getFileByName/:bucketName/:objectName", controller.getFileByName.bind(controller))
-    .get("/get-files-by-bucket/:bucketName", controller.getAllFilesByBucket.bind(controller))
-    .get("/get-metadata-by-etag/:bucketName/:etag", controller.getMetadataByETag.bind(controller))
-    .get("/get-sonolist-names-by-record-id/:recordName", controller.getSonolistNamesByRecordName.bind(controller))
-    .get("/isFileExisted/:bucketName/:fileName", controller.isFileExisted.bind(controller))
-    .get("/buckets-list", controller.getBucketsList.bind(controller));
+    .get("/download/:bucketName/:objectName", MinioController.getFileByName)
+    .get("/downloadEncryptedZip/:bucketName/:objectName", MinioController.downloadEncryptedZip)
+    .get("/getFileByName/:bucketName/:objectName", MinioController.getFileByName)
+    .get("/get-files-by-bucket/:bucketName", MinioController.getAllFilesByBucket)
+    .get("/get-metadata-by-etag/:bucketName/:etag", MinioController.getMetadataByETag)
+    .get("/get-sonolist-names-by-record-id/:recordName", MinioController.getSonolistNamesByRecordName)
+    .get("/isFileExisted/:bucketName/:fileName", MinioController.isFileExisted)
+    .get("/buckets-list", MinioController.getBucketsList);
 
 filesRouter
-    .post("/uploadFile", upload.single('file'), controller.uploadFile.bind(controller))
-    .post("/uploadFilesArray", upload.array('file'), controller.uploadFile.bind(controller))
-    .post("/create-bucket", controller.createBucket.bind(controller));
+    .post("/uploadFile", upload.single('file'), MinioController.uploadFile)
+    .post("/uploadFilesArray", upload.array('file'), MinioController.uploadFile)
+    .post("/create-bucket", MinioController.createBucket);
 
 
 filesRouter
-    .put("/updateMetadata/:bucketName/:fileName", controller.updateMetadata.bind(controller))
-    .put("/renameObject", controller.renameObject.bind(controller));
+    .put("/updateMetadata/:bucketName/:fileName", MinioController.updateMetadata)
+    .put("/renameObject", MinioController.renameObject);
 
-filesRouter.delete("/delete/:objectName", controller.deleteFile.bind(controller));
+filesRouter.delete("/delete/:objectName", MinioController.deleteFile);
 
 export default filesRouter;

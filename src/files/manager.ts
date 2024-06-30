@@ -1,20 +1,14 @@
 // manager.ts
 import { BucketItemFromList, UploadedObjectInfo } from "minio";
-import { MinioRepository } from "./repository.js";
+import MinioRepository from "./repository.js";
 import { RecordMetadata, SonogramMetadata, SonolistStream } from "./model.js";
 import { Readable } from "stream";
 
 export default class MinioManager {
-  private repository: MinioRepository;
-
-  constructor() {
-    this.repository = new MinioRepository();
-  }
-
-  async uploadFile(bucketName: string, metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
+  static async uploadFile(bucketName: string, metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
     try {
       console.log("manager - uploadFile");
-      const minioResult = await this.repository.uploadFile(bucketName, metadata, files);
+      const minioResult = await MinioRepository.uploadFile(bucketName, metadata, files);
       console.log("manager - uploadFile result", minioResult);
       if (minioResult) {
         return minioResult;
@@ -29,18 +23,18 @@ export default class MinioManager {
     }
   }
 
-  async getFileByName(bucketName: string, imageName: string): Promise<{ stream: Readable, metadata: RecordMetadata | SonogramMetadata }> {
-    const imageUrl = await this.repository.getFileByName(bucketName, imageName);
+  static async getFileByName(bucketName: string, imageName: string): Promise<{ stream: Readable, metadata: RecordMetadata | SonogramMetadata }> {
+    const imageUrl = await MinioRepository.getFileByName(bucketName, imageName);
     return imageUrl;
   };
 
-  async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
+  static async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
     name: string,
     id: string,
     metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>
   } | null> {
     try {
-      const objectInfo = await this.repository.getFileMetadataByETag(bucketName, etag);
+      const objectInfo = await MinioRepository.getFileMetadataByETag(bucketName, etag);
       return objectInfo;
     } catch (error: any) {
       console.error('Error retrieving file metadata (manager):', error.message);
@@ -48,9 +42,9 @@ export default class MinioManager {
     }
   }
 
-  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[]> {
+  static async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[]> {
     try {
-      const files = await this.repository.getAllFilesByBucket(bucketName);
+      const files = await MinioRepository.getAllFilesByBucket(bucketName);
       return files;
     } catch (error: any) {
       console.error('Manager Error [getAllFilesByBucket]:', error.message);
@@ -58,9 +52,9 @@ export default class MinioManager {
     }
   }
 
-  async getSonolistNamesByRecordName(recordId: string): Promise<string[]> {
+  static async getSonolistNamesByRecordName(recordId: string): Promise<string[]> {
     try {
-      const filesNames = await this.repository.getSonolistNamesByRecordName(recordId);
+      const filesNames = await MinioRepository.getSonolistNamesByRecordName(recordId);
       return filesNames;
     } catch (error: any) {
       console.error('Manager Error [getSonolistNamesByRecordName]:', error.message);
@@ -68,9 +62,9 @@ export default class MinioManager {
     }
   }
 
-  async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
+  static async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
     try {
-      const status = await this.repository.isFileExisted(fileName, bucketName);
+      const status = await MinioRepository.isFileExisted(fileName, bucketName);
       return status;
     } catch (error: any) {
       console.error('Manager Error [isFileExisted]:', error.message);
@@ -78,9 +72,9 @@ export default class MinioManager {
     }
   }
 
-  async updateMetadata(fileName: string, bucketName: string, meatadata: Partial<RecordMetadata> | Partial<SonogramMetadata>): Promise<UploadedObjectInfo | null> {
+  static async updateMetadata(fileName: string, bucketName: string, meatadata: Partial<RecordMetadata> | Partial<SonogramMetadata>): Promise<UploadedObjectInfo | null> {
     try {
-      const updatedFile = await this.repository.updateMetadata(fileName, bucketName, meatadata);
+      const updatedFile = await MinioRepository.updateMetadata(fileName, bucketName, meatadata);
       return updatedFile;
     } catch (error: any) {
       console.error('Manager Error [updateMetadata]:', error.message);
@@ -88,10 +82,9 @@ export default class MinioManager {
     }
   }
 
-
-  async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
+  static async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
     try {
-      const response = await this.repository.deleteFile(bucketName, objectName);
+      const response = await MinioRepository.deleteFile(bucketName, objectName);
       return response;
     } catch (error: any) {
       console.error('Manager Error [deleteFile]:', error.message);
@@ -99,27 +92,27 @@ export default class MinioManager {
     }
   }
 
-  async createBucket(bucketName: string): Promise<string> {
+  static async createBucket(bucketName: string): Promise<string> {
     try {
-      return this.repository.createBucket(bucketName);
+      return MinioRepository.createBucket(bucketName);
     } catch (error: any) {
       console.error('Manager Error [createBucket]:', error.message);
       throw new Error('Error in createBucket');
     }
   }
 
-  async getBucketsList(): Promise<BucketItemFromList[]> {
+  static async getBucketsList(): Promise<BucketItemFromList[]> {
     try {
-      return this.repository.getBucketsList();
+      return MinioRepository.getBucketsList();
     } catch (error: any) {
       console.error('Manager Error [getBucketsList]:', error.message);
       throw new Error('Error in getBucketsList');
     }
   }
 
-  async renameObject(bucketName: string, oldObjectName: string, newObjectName: string): Promise<boolean> {
+  static async renameObject(bucketName: string, oldObjectName: string, newObjectName: string): Promise<boolean> {
     try {
-      return this.repository.renameObject(bucketName, oldObjectName, newObjectName);
+      return MinioRepository.renameObject(bucketName, oldObjectName, newObjectName);
     } catch (error: any) {
       console.error('Manager Error [renameObject]:', error.message);
       throw new Error('Error in renameObject');
