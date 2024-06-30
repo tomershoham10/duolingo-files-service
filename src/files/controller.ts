@@ -2,7 +2,7 @@ import axios from "axios";
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import MinioManager from "./manager.js";
-import { RecordMetadata, SonogramMetadata } from "./model.js";
+import { ExerciseTypes, Metadata } from "./model.js";
 import FormData from 'form-data';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -13,9 +13,10 @@ export default class MinioController {
   static async uploadFile(req: Request, res: Response) {
     try {
       console.log("controller - uploadFile", req.file, "controller - uploadFile body", req.body);
-      const bucketName: string = req.body.bucketName;
-      const metadataString: string = req.body.metadata;
-      const metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> = JSON.parse(metadataString);
+      const { bucketName, metadataString, exerciseType } = req.body;
+      // const metadataString: string = req.body.metadata;
+      // exerciseType
+      const metadata: Partial<Metadata> = JSON.parse(metadataString);
       console.log('controller - uploadFile - metadata', metadataString, metadata)
       const files: Express.Multer.File[] | Express.Multer.File | { [fieldname: string]: Express.Multer.File[]; } | undefined = req.files || req.file;
       if (!files) {
@@ -25,7 +26,7 @@ export default class MinioController {
       if (Array.isArray(files)) {
         // Handle multiple files
         const uploadPromises = files.map(async (file) => {
-          return MinioManager.uploadFile(bucketName, metadata, file);
+          return MinioManager.uploadFile(bucketName, exerciseType, metadata, file);
         });
 
         const results = await Promise.all(uploadPromises);
@@ -33,7 +34,7 @@ export default class MinioController {
         res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: results });
       } else {
         // Handle single file
-        const result = await MinioManager.uploadFile(bucketName, metadata, files);
+        const result = await MinioManager.uploadFile(bucketName, exerciseType, metadata, files);
         console.log('controller - uploadFile - Single file uploaded successfully:', result);
         res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: result });
       }
@@ -47,9 +48,10 @@ export default class MinioController {
 
   static async getFileByName(req: Request, res: Response): Promise<void> {
     try {
-      const bucketName = req.params.bucketName;
-      const objectName = req.params.objectName;
-      const objectData = await MinioManager.getFileByName(bucketName, objectName);
+      const { bucketName, exerciseType, objectName } = req.params as { bucketName: string, exerciseType: ExerciseTypes, objectName: string };
+      // const bucketName = req.params.bucketName;
+      // const objectName = req.params.objectName;
+      const objectData = await MinioManager.getFileByName(bucketName, exerciseType, objectName);
       const imageStream = objectData.stream;
       const metaData = objectData.metadata;
       console.log('controller - getimage', imageStream);
@@ -65,13 +67,13 @@ export default class MinioController {
 
   static async downloadEncryptedZip(req: Request, res: Response): Promise<void> {
     try {
-      const pythonServiceUrl = 'http://zips-encrypting-service:5000/api/encrypt-zip/upload';
-      const authServiceUrl = 'http://authentication-service:4000/api/auth/getRecordZipPassword';
+      const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://zips-encrypting-service:5000/api/encrypt-zip/upload';
+      const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://authentication-service:4000/api/auth/getRecordZipPassword';
 
 
-      const bucketName = req.params.bucketName;
-      const objectName = req.params.objectName;
-      const objectData = await MinioManager.getFileByName(bucketName, objectName);
+      const { bucketName, exerciseType, objectName } = req.params as { bucketName: string, exerciseType: ExerciseTypes, objectName: string };
+
+      const objectData = await MinioManager.getFileByName(bucketName, exerciseType, objectName);
       const imageStream = objectData.stream;
       const metaData = objectData.metadata;
 
@@ -122,8 +124,9 @@ export default class MinioController {
   };
 
   static async getMetadataByETag(req: Request, res: Response) {
-    const bucketName = req.params.bucketName;
-    const etag = req.params.etag;
+    const { bucketName, etag } = req.params as { bucketName: string, etag: string };
+    // const bucketName = req.params.bucketName;
+    // const etag = req.params.etag;
 
     try {
       const objectInfo = await MinioManager.getFileMetadataByETag(bucketName, etag);
@@ -153,36 +156,6 @@ export default class MinioController {
       ;
     } catch (error: any) {
       console.error('Controller getAllFilesByBucket Error:', error.message);
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async getSonolistNamesByRecordName(req: Request, res: Response) {
-    try {
-      const recordName = req.params.recordName;
-      console.log("files service controller - getSonolistNamesByRecordName recordName", recordName);
-
-      const sonograms = await MinioManager.getSonolistNamesByRecordName(recordName);
-      console.log("files service controller - getSonolistNamesByRecordName sonograms", sonograms);
-      (sonograms.length <= 0)
-        ? res.status(404).json({ error: "no sonograms" })
-        : res.status(200).json({ sonograms });
-
-      // Close response stream when all files are streamed
-      res.on('finish', () => {
-        console.log('All files streamed');
-      });
-
-      // fileStreams.forEach(fileStream => {
-      //   fileStream.pipe(res, { end: false });
-      // });
-      // // Close the response stream when all file streams are piped
-      // Promise.all(fileStreams.map(stream => new Promise(resolve => stream.on('end', resolve)))).then(() => {
-      //   res.end();
-      // });
-
-    } catch (error: any) {
-      console.error('Controller getSonolistByRecordName Error:', error.message);
       res.status(500).json({ error: error.message });
     }
   }

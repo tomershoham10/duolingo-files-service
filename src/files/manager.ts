@@ -1,14 +1,20 @@
 // manager.ts
 import { BucketItemFromList, UploadedObjectInfo } from "minio";
 import MinioRepository from "./repository.js";
-import { RecordMetadata, SonogramMetadata, SonolistStream } from "./model.js";
+import { ExerciseTypes, Metadata } from "./model.js";
 import { Readable } from "stream";
 
 export default class MinioManager {
-  static async uploadFile(bucketName: string, metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
+  static async uploadFile(
+    bucketName: string,
+    exerciseType: ExerciseTypes,
+    metadata: Partial<Metadata>,
+    files: Express.Multer.File | Express.Multer.File[] | {
+      [fieldname: string]: Express.Multer.File[];
+    }): Promise<UploadedObjectInfo[]> {
     try {
       console.log("manager - uploadFile");
-      const minioResult = await MinioRepository.uploadFile(bucketName, metadata, files);
+      const minioResult = await MinioRepository.uploadFile(bucketName, exerciseType, metadata, files);
       console.log("manager - uploadFile result", minioResult);
       if (minioResult) {
         return minioResult;
@@ -23,15 +29,16 @@ export default class MinioManager {
     }
   }
 
-  static async getFileByName(bucketName: string, imageName: string): Promise<{ stream: Readable, metadata: RecordMetadata | SonogramMetadata }> {
-    const imageUrl = await MinioRepository.getFileByName(bucketName, imageName);
+  static async getFileByName(bucketName: string, exerciseType: ExerciseTypes, objectName: string): Promise<{ stream: Readable, metadata: Metadata }> {
+    const fileName = `${exerciseType}/${objectName}`;
+    const imageUrl = await MinioRepository.getFileByName(bucketName, objectName);
     return imageUrl;
   };
 
   static async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
     name: string,
     id: string,
-    metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>
+    metadata: Partial<Metadata>
   } | null> {
     try {
       const objectInfo = await MinioRepository.getFileMetadataByETag(bucketName, etag);
@@ -42,7 +49,7 @@ export default class MinioManager {
     }
   }
 
-  static async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[]> {
+  static async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<Metadata> }[]> {
     try {
       const files = await MinioRepository.getAllFilesByBucket(bucketName);
       return files;
@@ -52,15 +59,6 @@ export default class MinioManager {
     }
   }
 
-  static async getSonolistNamesByRecordName(recordId: string): Promise<string[]> {
-    try {
-      const filesNames = await MinioRepository.getSonolistNamesByRecordName(recordId);
-      return filesNames;
-    } catch (error: any) {
-      console.error('Manager Error [getSonolistNamesByRecordName]:', error.message);
-      throw new Error(error.message);
-    }
-  }
 
   static async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
     try {
@@ -72,7 +70,7 @@ export default class MinioManager {
     }
   }
 
-  static async updateMetadata(fileName: string, bucketName: string, meatadata: Partial<RecordMetadata> | Partial<SonogramMetadata>): Promise<UploadedObjectInfo | null> {
+  static async updateMetadata(fileName: string, bucketName: string, meatadata: Partial<Metadata>): Promise<UploadedObjectInfo | null> {
     try {
       const updatedFile = await MinioRepository.updateMetadata(fileName, bucketName, meatadata);
       return updatedFile;

@@ -2,11 +2,12 @@ import * as Minio from 'minio';
 import { minioClient } from "../server.js";
 import { Readable, PassThrough, Stream } from 'stream';
 import { BucketItemFromList, ItemBucketMetadata, UploadedObjectInfo } from 'minio';
-import { RecordMetadata, SignatureTypes, SonarSystem, SonogramMetadata, SonolistStream } from './model.js';
+import { ExerciseTypes, Metadata } from './model.js';
+import { getFormattedMetadata } from '../utils/getFormattedMetadata.js';
 
-export class MinioRepository {
+export default class MinioRepository {
 
-  async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number, metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>): Promise<UploadedObjectInfo> {
+  static async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number, metadata: Partial<Metadata>): Promise<UploadedObjectInfo> {
     try {
       return new Promise<UploadedObjectInfo>((resolve, reject) => {
         // Convert the PassThrough stream to Buffer
@@ -34,7 +35,13 @@ export class MinioRepository {
   }
 
 
-  async uploadFile(bucketName: string, metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>, files: Express.Multer.File | Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; }): Promise<UploadedObjectInfo[]> {
+  static async uploadFile(
+    bucketName: string,
+    exerciseType: ExerciseTypes,
+    metadata: Partial<Metadata>,
+    files: Express.Multer.File | Express.Multer.File[] | {
+      [fieldname: string]: Express.Multer.File[];
+    }): Promise<UploadedObjectInfo[]> {
     try {
       if (!files) {
         throw new Error('No files provided.');
@@ -47,15 +54,17 @@ export class MinioRepository {
         for (const file of files) {
           const fileStream = new PassThrough();
           fileStream.end(file.buffer);
-          const uploadPromise = this.putObjectPromise(bucketName, file.originalname, fileStream, file.size, metadata);
+          const fileName = `${exerciseType}/${file.originalname}`;
+          const uploadPromise = this.putObjectPromise(bucketName, fileName, fileStream, file.size, metadata);
           uploadPromises.push(uploadPromise);
         }
       } else {
         // Handle single file
         const fileStream = new PassThrough();
         fileStream.end(files.buffer);
+        const fileName = `${exerciseType}/${files.originalname}`;
 
-        const uploadPromise = this.putObjectPromise(bucketName, files.originalname as string, fileStream, files.size as number, metadata);
+        const uploadPromise = this.putObjectPromise(bucketName, fileName, fileStream, files.size as number, metadata);
         uploadPromises.push(uploadPromise);
       }
 
@@ -70,14 +79,14 @@ export class MinioRepository {
     }
   };
 
-  async getFileByName(bucketName: string, fileName: string): Promise<{ stream: Readable, metadata: RecordMetadata | SonogramMetadata }> {
+  static async getFileByName(bucketName: string, fileName: string): Promise<{ stream: Readable, metadata: Metadata }> {
     try {
       return new Promise(async (resolve, reject) => {
         try {
           const stream = await minioClient.getObject(bucketName, fileName);
           const statPromise = await minioClient.statObject(bucketName, fileName)
           console.log('getFileByName', bucketName, '/', fileName);
-          const metadata = statPromise.metaData as RecordMetadata | SonogramMetadata;
+          const metadata = statPromise.metaData as Metadata;
           resolve({ stream: stream, metadata: metadata });
         } catch (err) {
           reject(`getFileByName repo - ${err}`);
@@ -90,10 +99,10 @@ export class MinioRepository {
   };
 
 
-  async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[]> {
+  static async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<Metadata> }[]> {
     try {
       const objectsStream: Stream = minioClient.listObjects(bucketName, "");
-      const files: { name: string; id: string; metadata: Partial<RecordMetadata> | Partial<SonogramMetadata> }[] = [];
+      const files: { name: string; id: string; metadata: Partial<Metadata> }[] = [];
 
 
       const statPromises: Promise<void>[] = [];
@@ -104,73 +113,8 @@ export class MinioRepository {
             const metadata = stat.metaData as ItemBucketMetadata;
             const metaKeys = Object.keys(metadata);
             console.log("metaKeys", metaKeys)
-            let convertedMetadata: Partial<RecordMetadata> | Partial<SonogramMetadata> = {};
-
-            for (const key in metadata) {
-              if (metadata.hasOwnProperty(key)) {
-                switch (key) {
-
-
-                  // Map each key to its corresponding type
-                  case 'record_length':
-                  case 'difficulty_level':
-                  case 'channels_number':
-
-                    if (metaKeys.includes(key)) {
-                      console.log('record_length', metadata[key], parseFloat(metadata[key]));
-                      (convertedMetadata as Partial<RecordMetadata>)[key] = parseFloat(metadata[key]);
-                    }
-                    break;
-                  case 'sonograms_ids':
-                  case 'targets_ids_list':
-                    if (metaKeys.includes(key)) {
-                      (convertedMetadata as Partial<RecordMetadata>)[key] = metadata[key].split(', ')[0].length > 0 ? metadata[key].split(', ') : [];
-                    }
-                    break;
-                  case 'operation':
-                  case 'source_id':
-                    if (metaKeys.includes(key)) {
-                      (convertedMetadata as Partial<RecordMetadata>)[key] = metadata[key];
-                    }
-                    break;
-                  case 'is_in_italy':
-                  case 'is_backround_vessels':
-                  case 'aux':
-                    if (metaKeys.includes(key)) {
-                      (convertedMetadata as Partial<RecordMetadata>)[key] = metadata[key] === 'true';
-                    }
-                    break;
-                  case 'signature_type':
-                    if (metaKeys.includes(key)) {
-                      (convertedMetadata as Partial<RecordMetadata>)[key] = SignatureTypes[metadata[key] as keyof typeof SignatureTypes];
-                    }
-                    break;
-                  case 'sonar_system':
-                    if (metaKeys.includes(key)) {
-                      (convertedMetadata as Partial<RecordMetadata>)['sonar_system'] = metadata[key] as SonarSystem;
-                    }
-                    break;
-                  case 'fft':
-                  case 'bw':
-                    if (metaKeys.includes(key)) {
-                      (convertedMetadata as Partial<SonogramMetadata>)[key] = parseFloat(metadata[key]);
-                    }
-                    break;
-                  case 'sonogram_type':
-                    if (metaKeys.includes(key)) {
-                      (convertedMetadata as Partial<SonogramMetadata>)['sonogram_type'] = metadata[key] as SonarSystem;
-                    }
-                    break;
-                  // Handle other cases here
-                  default:
-                    // If key doesn't match any known properties, ignore it
-                    break;
-                }
-              }
-            }
-
-            // console.log("convertedMetadata", convertedMetadata);
-
+            const convertedMetadata = getFormattedMetadata(metadata);
+            
             files.push({ name: object.name, id: stat.etag, metadata: convertedMetadata });
           })
           .catch((error) => {
@@ -204,10 +148,10 @@ export class MinioRepository {
     }
   }
 
-  async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
+  static async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
     name: string,
     id: string,
-    metadata: Partial<RecordMetadata> | Partial<SonogramMetadata>
+    metadata: Partial<Metadata>
   }
     | null> {
     try {
@@ -227,50 +171,7 @@ export class MinioRepository {
     }
   }
 
-  async getSonolistNamesByRecordName(recordName: string): Promise<string[]> {
-    try {
-      const bucketName = "records";
-      const stat = await minioClient.statObject(bucketName, recordName);
-      if (!!!stat) return [];
-      const metadata = stat.metaData as Partial<RecordMetadata>;
-      console.log(".sonograms_ids", metadata.sonograms_ids, metadata.sonograms_ids?.length);
-      if (metadata.sonograms_ids === undefined || metadata.sonograms_ids.length <= 0) return [];
-      let sonolist: string[] = [];
-      if (typeof metadata.sonograms_ids === 'string') {
-        sonolist = [metadata.sonograms_ids];
-      } else if (Array.isArray(metadata.sonograms_ids)) {
-        sonolist = metadata.sonograms_ids;
-      }
-      // console.log("getSonolistByRecordName repo", sonolist);
-      return sonolist;
-      // const filesStreams: SonolistStream[] = [];
-      // for (const fileName of sonolist) {
-      //   const stream = await this.getFileByName('sonograms', fileName);
-      //   const sonoStream = { fileName: fileName, fileStream: stream };
-      //   filesStreams.push(sonoStream);
-      //   filesStreams.push(sonoStream);
-      //   // const url = await createBlobUrlFromStream(stream);
-      //   // console.log("getSonolistByRecordName url", url);
-      //   // urls.push(url);
-      // }
-
-      // console.log("getSonolistByRecordName repo - filesStreams", filesStreams);
-      // return filesStreams;
-
-
-
-      // const promises = sonolist.map(fileName => this.getFileByName('sonograms', fileName));
-      // const fileStreams = await Promise.all(promises);
-      // console.log("getSonolistByRecordName repo - fileStreams", fileStreams);
-      // return fileStreams;
-
-    } catch (error: any) {
-      console.error('Repository Error:', error.message);
-      throw new Error(`repo - getAllFilesByBucket: ${error}`);
-    }
-  }
-
-  async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
+  static async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
     try {
       const fileStream = await minioClient.getObject(bucketName, fileName);
       return !!fileStream;
@@ -287,7 +188,7 @@ export class MinioRepository {
     }
   }
 
-  async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
+  static async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
     try {
       await minioClient.removeObject(bucketName, objectName).then(() => { return true }).catch((err) => { console.log(err); throw err; });
       return true;
@@ -297,10 +198,10 @@ export class MinioRepository {
     }
   }
 
-  async updateMetadata(
+  static async updateMetadata(
     fileName: string,
     bucketName: string,
-    newMetadata: Partial<RecordMetadata> | Partial<SonogramMetadata>
+    newMetadata: Partial<Metadata>
   ): Promise<UploadedObjectInfo | null> {
     try {
       const objectInfo = await minioClient.statObject(bucketName, fileName);
@@ -353,7 +254,7 @@ export class MinioRepository {
     }
   }
 
-  async createBucket(bucketName: string): Promise<string> {
+  static async createBucket(bucketName: string): Promise<string> {
     try {
       return new Promise((resolve, reject) => {
         minioClient.makeBucket(bucketName, function (err) {
@@ -373,7 +274,7 @@ export class MinioRepository {
     }
   }
 
-  async getBucketsList(): Promise<BucketItemFromList[]> {
+  static async getBucketsList(): Promise<BucketItemFromList[]> {
     try {
       const buckets = await minioClient.listBuckets();
       return buckets;
@@ -383,7 +284,7 @@ export class MinioRepository {
     }
   }
 
-  async renameObject(bucketName: string, oldObjectName: string, newObjectName: string): Promise<boolean> {
+  static async renameObject(bucketName: string, oldObjectName: string, newObjectName: string): Promise<boolean> {
     try {
       // Copy the object to the same bucket with the new name
       var conds = new Minio.CopyConditions();
@@ -408,29 +309,3 @@ export class MinioRepository {
     }
   }
 }
-
-// async function createBlobUrlFromStream(stream: NodeJS.ReadableStream): Promise<string> {
-//   return new Promise((resolve, reject) => {
-//     const chunks: Uint8Array[] = [];
-//     stream.on('data', (chunk: Uint8Array) => {
-//       chunks.push(chunk);
-//     });
-
-//     stream.on('end', () => {
-//       const buffer = Buffer.concat(chunks);
-
-//       // Create a Blob from the Buffer
-//       const blob = new Blob([buffer], { type: 'image/*' });
-
-//       // Create Blob URL
-//       const blobURL = URL.createObjectURL(blob);
-
-//       // Clean up blobURL when done
-//       resolve(blobURL);
-//     });
-
-//     stream.on('error', (err: Error) => {
-//       reject(err);
-//     });
-//   });
-// }

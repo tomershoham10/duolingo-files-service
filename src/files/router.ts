@@ -8,13 +8,12 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 filesRouter
-    .get("/download/:bucketName/:objectName", MinioController.getFileByName)
-    .get("/downloadEncryptedZip/:bucketName/:objectName", MinioController.downloadEncryptedZip)
-    .get("/getFileByName/:bucketName/:objectName", MinioController.getFileByName)
+    .get("/download/:bucketName/:exerciseType/:objectName", MinioController.getFileByName)
+    .get("/downloadEncryptedZip/:bucketName/:exerciseType/:objectName", MinioController.downloadEncryptedZip)
+    .get("/getFileByName/:bucketName/:exerciseType/:objectName", MinioController.getFileByName)
     .get("/get-files-by-bucket/:bucketName", MinioController.getAllFilesByBucket)
     .get("/get-metadata-by-etag/:bucketName/:etag", MinioController.getMetadataByETag)
-    .get("/get-sonolist-names-by-record-id/:recordName", MinioController.getSonolistNamesByRecordName)
-    .get("/isFileExisted/:bucketName/:fileName", MinioController.isFileExisted)
+    .get("/isFileExisted/:bucketName/:exerciseType/:fileName", MinioController.isFileExisted)
     .get("/buckets-list", MinioController.getBucketsList);
 
 filesRouter
