@@ -65,6 +65,24 @@ export default class MinioController {
     }
   };
 
+
+  static async getFileMetadataByName(req: Request, res: Response): Promise<void> {
+    try {
+      const { bucketName, exerciseType, objectName } = req.params as { bucketName: string, exerciseType: ExerciseTypes, objectName: string };
+      // const bucketName = req.params.bucketName;
+      // const objectName = req.params.objectName;
+      const metaData = await MinioManager.getFileMetadataByName(bucketName, exerciseType, objectName);
+      console.log('controller - getFileMetadataByName', metaData);
+
+      // Pipe the image stream to the response
+      res.status(200).json({ message: `${objectName} metadata`, metaData: metaData });
+    } catch (error) {
+      console.error('Error fetching image (controller):', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  };
+
+
   static async downloadEncryptedZip(req: Request, res: Response): Promise<void> {
     try {
       const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://zips-encrypting-service:5000/api/encrypt-zip/upload';

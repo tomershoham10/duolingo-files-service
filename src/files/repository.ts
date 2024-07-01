@@ -98,6 +98,23 @@ export default class MinioRepository {
     }
   };
 
+  static async getFileMetadataByName(bucketName: string, fileName: string): Promise<Metadata> {
+    try {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const statPromise = await minioClient.statObject(bucketName, fileName);
+          console.log('getFileByName', bucketName, '/', fileName);
+          const metadata = statPromise.metaData as Metadata;
+          resolve(metadata);
+        } catch (err) {
+          reject(`getFileByName repo - ${err}`);
+        }
+      });
+    } catch (error: any) {
+      console.error('Repository Error (getFileByName):', error.message);
+      throw new Error(`repo - getFileByName: ${error}`);
+    }
+  };
 
   static async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<Metadata> }[]> {
     try {
@@ -114,7 +131,7 @@ export default class MinioRepository {
             const metaKeys = Object.keys(metadata);
             console.log("metaKeys", metaKeys)
             const convertedMetadata = getFormattedMetadata(metadata);
-            
+
             files.push({ name: object.name, id: stat.etag, metadata: convertedMetadata });
           })
           .catch((error) => {

@@ -31,8 +31,14 @@ export default class MinioManager {
 
   static async getFileByName(bucketName: string, exerciseType: ExerciseTypes, objectName: string): Promise<{ stream: Readable, metadata: Metadata }> {
     const fileName = `${exerciseType}/${objectName}`;
-    const imageUrl = await MinioRepository.getFileByName(bucketName, objectName);
-    return imageUrl;
+    const fileObject = await MinioRepository.getFileByName(bucketName, fileName);
+    return fileObject;
+  };
+
+  static async getFileMetadataByName(bucketName: string, exerciseType: ExerciseTypes, objectName: string): Promise<Metadata> {
+    const fileName = `${exerciseType}/${objectName}`;
+    const metadata = await MinioRepository.getFileMetadataByName(bucketName, fileName);
+    return metadata;
   };
 
   static async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
