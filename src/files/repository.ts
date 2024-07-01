@@ -7,7 +7,7 @@ import { getFormattedMetadata } from '../utils/getFormattedMetadata.js';
 
 export default class MinioRepository {
 
-  static async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number, metadata: Partial<Metadata>): Promise<UploadedObjectInfo> {
+  static async putObjectPromise(bucketName: string, objectName: string, fileStream: NodeJS.ReadableStream, size: number, metadata: Partial<Metadata>): Promise<UploadedObjectInfo | null> {
     try {
       return new Promise<UploadedObjectInfo>((resolve, reject) => {
         // Convert the PassThrough stream to Buffer
@@ -30,7 +30,7 @@ export default class MinioRepository {
     }
     catch (error: any) {
       console.error('Repository Error:', error.message);
-      throw new Error(`repo - putObjectPromise: ${error}`);
+      return null;
     }
   }
 
@@ -39,43 +39,24 @@ export default class MinioRepository {
     bucketName: string,
     exerciseType: ExerciseTypes,
     metadata: Partial<Metadata>,
-    files: Express.Multer.File | Express.Multer.File[] | {
-      [fieldname: string]: Express.Multer.File[];
-    }): Promise<UploadedObjectInfo[]> {
+    file: Express.Multer.File): Promise<UploadedObjectInfo | null> {
     try {
-      if (!files) {
-        throw new Error('No files provided.');
-      }
 
-      const uploadPromises: Promise<UploadedObjectInfo>[] = [];
 
-      if (Array.isArray(files)) {
-        // Handle multiple files
-        for (const file of files) {
-          const fileStream = new PassThrough();
-          fileStream.end(file.buffer);
-          const fileName = `${exerciseType}/${file.originalname}`;
-          const uploadPromise = this.putObjectPromise(bucketName, fileName, fileStream, file.size, metadata);
-          uploadPromises.push(uploadPromise);
-        }
-      } else {
-        // Handle single file
-        const fileStream = new PassThrough();
-        fileStream.end(files.buffer);
-        const fileName = `${exerciseType}/${files.originalname}`;
+      // Handle single file
+      const fileStream = new PassThrough();
+      fileStream.end(file.buffer);
+      const fileName = `${exerciseType}/${file.originalname}`;
 
-        const uploadPromise = this.putObjectPromise(bucketName, fileName, fileStream, files.size as number, metadata);
-        uploadPromises.push(uploadPromise);
-      }
+      const res = await MinioRepository.putObjectPromise(bucketName, fileName, fileStream, file.size as number, metadata);
 
       // Wait for all uploads to complete
-      const uploadedFiles = await Promise.all(uploadPromises);
 
-      console.log('repo - upload - success', uploadedFiles);
-      return uploadedFiles;
+      console.log('repo - upload - success', res);
+      return res;
     } catch (error: any) {
-      console.error('Repository Error:', error.message);
-      throw new Error(`repo - uploadFile: ${error}`);
+      console.error('Repository uploading Error:', error.message);
+      return null;
     }
   };
 
@@ -173,7 +154,7 @@ export default class MinioRepository {
     | null> {
     try {
       console.log('repo - getFileMetadataByETag etag', etag);
-      const bucketFiles = await this.getAllFilesByBucket(bucketName);
+      const bucketFiles = await MinioRepository.getAllFilesByBucket(bucketName);
       const obj = bucketFiles.filter(file => file.id === etag)[0];
       console.log('repo - getFileMetadataByETag obj', obj);
       return obj;

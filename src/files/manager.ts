@@ -9,23 +9,18 @@ export default class MinioManager {
     bucketName: string,
     exerciseType: ExerciseTypes,
     metadata: Partial<Metadata>,
-    files: Express.Multer.File | Express.Multer.File[] | {
-      [fieldname: string]: Express.Multer.File[];
-    }): Promise<UploadedObjectInfo[]> {
+    file: Express.Multer.File): Promise<UploadedObjectInfo | null> {
     try {
       console.log("manager - uploadFile");
-      const minioResult = await MinioRepository.uploadFile(bucketName, exerciseType, metadata, files);
+      const minioResult = await MinioRepository.uploadFile(bucketName, exerciseType, metadata, file);
       console.log("manager - uploadFile result", minioResult);
-      if (minioResult) {
-        return minioResult;
-      }
-      else {
+      if (!minioResult) {
         throw new Error('Error uploading file');
       }
-
+      return minioResult;
     } catch (error: any) {
       console.error('Manager Error [uploadFile]:', error.message);
-      throw new Error('Error in uploadFile');
+      return null;
     }
   }
 
