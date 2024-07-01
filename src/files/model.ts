@@ -1,5 +1,9 @@
 import { Readable } from "stream";
 
+export enum BucketsNames {
+  
+}
+
 export enum SignatureTypes {
   PASSIVE = 'passive',
   ACTIVE = 'active',
@@ -11,21 +15,6 @@ export enum SonarSystem {
   DEMON = 'demon',
   LOFAR = 'lofar'
 }
-
-// export interface RecordMetadata {
-//   record_length: number;
-//   sonograms_ids: string[];
-//   difficulty_level: number;
-//   targets_ids_list: string[];
-//   operation: string;
-//   source: string;
-//   is_in_italy: boolean;
-//   transmition: Transmissions;
-//   channels_number: number;
-//   sonar_system: SonarSystem;
-//   is_backround_vessels: boolean;
-//   aux: boolean;
-// }
 
 export enum ExerciseTypes {
   FSA = "fsa",
