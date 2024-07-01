@@ -10,42 +10,6 @@ const passwordKey = process.env.PASSWORD_KEY || 'password';
 
 
 export default class MinioController {
-  static async uploadFile(req: Request, res: Response) {
-    try {
-      console.log("controller - uploadFile", req.file, "controller - uploadFile body", req.body);
-      const { bucketName, metadataString, exerciseType } = req.body;
-      // const metadataString: string = req.body.metadata;
-      // exerciseType
-      const metadata: Partial<Metadata> = JSON.parse(metadataString);
-      console.log('controller - uploadFile - metadata', metadataString, metadata)
-      const files: Express.Multer.File[] | Express.Multer.File | { [fieldname: string]: Express.Multer.File[]; } | undefined = req.files || req.file;
-      if (!files) {
-        return res.status(400).json({ success: false, message: 'No files provided.' });
-      }
-
-      if (Array.isArray(files)) {
-        // Handle multiple files
-        const uploadPromises = files.map(async (file) => {
-          return MinioManager.uploadFile(bucketName, exerciseType, metadata, file);
-        });
-
-        const results = await Promise.all(uploadPromises);
-        console.log('controller - uploadFile - Multiple files uploaded successfully:', results);
-        res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: results });
-      } else {
-        // Handle single file
-        const result = await MinioManager.uploadFile(bucketName, exerciseType, metadata, files);
-        console.log('controller - uploadFile - Single file uploaded successfully:', result);
-        res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: result });
-      }
-
-    }
-    catch (error: any) {
-      console.error('Controller uploadFile Error:', error.message);
-      res.status(500).json({ error: error.message });
-    }
-  }
-
   static async getFileByName(req: Request, res: Response): Promise<void> {
     try {
       const { bucketName, exerciseType, objectName } = req.params as { bucketName: string, exerciseType: ExerciseTypes, objectName: string };
@@ -64,6 +28,54 @@ export default class MinioController {
       res.status(500).json({ error: 'Internal Server Error' });
     }
   };
+
+  static async uploadFile(req: Request, res: Response) {
+    try {
+      console.log("controller - uploadFile", req.file, "controller - uploadFile body", req.body);
+      const { bucketName, metadata, exerciseType } = req.body;
+      const metadataObj: Partial<Metadata> = JSON.parse(metadata);
+      console.log('controller - uploadFile - metadata', metadataObj, metadata)
+      const file: Express.Multer.File | undefined = req.file;
+      if (!file) {
+        return res.status(400).json({ success: false, message: 'File was not provided.' });
+      }
+      const result = await MinioManager.uploadFile(bucketName, exerciseType, metadata, file);
+      console.log('controller - uploadFile - Single file uploaded successfully:', result);
+      if (res === null) {
+        throw new Error('error while uploading file');
+      } else {
+        res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: result });
+      }
+    }
+    catch (error: any) {
+      console.error('Controller uploadFile Error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+
+  static async uploadFilesArray(req: Request, res: Response) {
+    try {
+      console.log("controller - uploadFile", req.file, "controller - uploadFile body", req.body);
+      const { bucketName, metadataString, exerciseType } = req.body;
+      const metadata: Partial<Metadata> = JSON.parse(metadataString);
+      const files: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[]; } | undefined = req.files;
+      if (!files || !Array.isArray(files)) {
+        return res.status(400).json({ success: false, message: 'No files provided.' });
+      }
+      const uploadPromises = files.map(async (file) => {
+        return MinioManager.uploadFile(bucketName, exerciseType, metadata, file);
+      });
+
+      const results = await Promise.all(uploadPromises);
+      console.log('controller - uploadFile - Multiple files uploaded successfully:', results);
+      res.status(200).json({ success: true, message: 'Files uploaded successfully.', uploadedData: results });
+    }
+    catch (error: any) {
+      console.error('Controller uploadFile Error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  }
 
 
   static async getFileMetadataByName(req: Request, res: Response): Promise<void> {

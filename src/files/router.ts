@@ -17,8 +17,8 @@ filesRouter
     .get("/buckets-list", MinioController.getBucketsList);
 
 filesRouter
+    .post("/uploadFilesArray", upload.array('file'), MinioController.uploadFilesArray)
     .post("/uploadFile", upload.single('file'), MinioController.uploadFile)
-    .post("/uploadFilesArray", upload.array('file'), MinioController.uploadFile)
     .post("/create-bucket", MinioController.createBucket);
 
 
