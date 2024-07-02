@@ -97,30 +97,35 @@ export default class MinioRepository {
     }
   };
 
-  static async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<Metadata> }[]> {
+  static async getAllFilesByBucket(bucketName: string, prefix: string): Promise<{
+    id: string; name: string; exerciseType: ExerciseTypes; metadata: Partial<Metadata>
+  }[]> {
     try {
-      const objectsStream: Stream = minioClient.listObjects(bucketName, "");
+      const objectsStream: Stream = minioClient.listObjects(bucketName, '', true);
       const files: { name: string; id: string; metadata: Partial<Metadata> }[] = [];
 
 
       const statPromises: Promise<void>[] = [];
 
       objectsStream.on('data', (object) => {
-        const statPromise = minioClient.statObject(bucketName, object.name)
-          .then((stat) => {
-            const metadata = stat.metaData as ItemBucketMetadata;
-            const metaKeys = Object.keys(metadata);
-            console.log("metaKeys", metaKeys)
-            const convertedMetadata = getFormattedMetadata(metadata);
+        console.log('getAllFilesByBucket - object', object, object, object.name);
+        if (object.name) {
+          const statPromise = minioClient.statObject(bucketName, object.name)
+            .then((stat) => {
+              const metadata = stat.metaData as ItemBucketMetadata;
+              const metaKeys = Object.keys(metadata);
+              console.log("metaKeys", metaKeys)
+              const convertedMetadata = getFormattedMetadata(metadata);
 
-            files.push({ name: object.name, id: stat.etag, metadata: convertedMetadata });
-          })
-          .catch((error) => {
-            console.error(`Error getting metadata for ${object.name}:`, error);
-            throw new Error(`Error getting metadata for ${object.name}, ${error}`);
-          });
+              files.push({ id: stat.etag, name: object.name, metadata: convertedMetadata });
+            })
+            .catch((error) => {
+              console.error(`Error getting metadata for ${object.name}:`, error);
+              throw new Error(`Error getting metadata for ${object.name}, ${error}`);
+            });
 
-        statPromises.push(statPromise);
+          statPromises.push(statPromise);
+        }
       });
 
       return new Promise((resolve, reject) => {
@@ -128,7 +133,15 @@ export default class MinioRepository {
           try {
             await Promise.all(statPromises); // Wait for all statObject calls to complete
             console.log('repo - getAllFilesByBucket - files', files);
-            resolve(files);
+            const filesWithExerciseType = files.map(file => {
+              const filePrefixAndName = file.name.split('/');
+              return { id: file.id, name: filePrefixAndName[1], exerciseType: filePrefixAndName[0] as ExerciseTypes, metadata: file.metadata }
+            })
+
+            if (prefix !== '') {
+              filesWithExerciseType.filter(file => file.exerciseType === prefix);
+            }
+            resolve(filesWithExerciseType);
           } catch (error) {
             console.error("Error getAllFilesByBucket:", error);
             reject(error);
@@ -154,7 +167,7 @@ export default class MinioRepository {
     | null> {
     try {
       console.log('repo - getFileMetadataByETag etag', etag);
-      const bucketFiles = await MinioRepository.getAllFilesByBucket(bucketName);
+      const bucketFiles = await MinioRepository.getAllFilesByBucket(bucketName, '');
       const obj = bucketFiles.filter(file => file.id === etag)[0];
       console.log('repo - getFileMetadataByETag obj', obj);
       return obj;
