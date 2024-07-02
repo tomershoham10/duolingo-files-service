@@ -50,9 +50,11 @@ export default class MinioManager {
     }
   }
 
-  static async getAllFilesByBucket(bucketName: string): Promise<{ name: string; id: string; metadata: Partial<Metadata> }[]> {
+  static async getAllFilesByBucket(bucketName: string, prefix: string = ''): Promise<{
+    id: string; name: string; exerciseType: ExerciseTypes; metadata: Partial<Metadata>
+  }[]> {
     try {
-      const files = await MinioRepository.getAllFilesByBucket(bucketName);
+      const files = await MinioRepository.getAllFilesByBucket(bucketName, prefix);
       return files;
     } catch (error: any) {
       console.error('Manager Error [getAllFilesByBucket]:', error.message);

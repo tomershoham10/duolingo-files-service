@@ -95,6 +95,7 @@ export default class MinioController {
   };
 
 
+
   static async downloadEncryptedZip(req: Request, res: Response): Promise<void> {
     try {
       const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://zips-encrypting-service:5000/api/encrypt-zip/upload';
@@ -189,6 +190,24 @@ export default class MinioController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async getAllFilesByBucketAndType(req: Request, res: Response) {
+    try {
+      const { bucketName, exerciseType } = req.params;
+      console.log("files service controller - get all files by bucket and type", bucketName, exerciseType);
+
+      const files = await MinioManager.getAllFilesByBucket(bucketName, exerciseType);
+      console.log("files service controller - get all files by bucket", files);
+      files ?
+        res.status(200).json({ files }) :
+        res.status(500).json({ error: "Internal server error" });
+      ;
+    } catch (error: any) {
+      console.error('Controller getAllFilesByBucket Error:', error.message);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
 
   static async isFileExisted(req: Request, res: Response) {
     try {
