@@ -239,10 +239,9 @@ export default class MinioController {
   }
 
   static async deleteFile(req: Request, res: Response) {
-    const bucketName = req.body.bucketName;
-    const objectName = req.body.objectName;
+    const { bucketName, exerciseType, objectName } = req.params as { bucketName: string, exerciseType: ExerciseTypes, objectName: string };
     try {
-      await MinioManager.deleteFile(bucketName, objectName);
+      await MinioManager.deleteFile(bucketName, exerciseType, objectName);
       res.status(200).json({ message: "File deleted successfully" });
     } catch (error: any) {
       console.error('Controller deleteFile Error:', error.message);

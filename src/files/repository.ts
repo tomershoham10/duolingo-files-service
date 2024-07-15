@@ -199,13 +199,15 @@ export default class MinioRepository {
     }
   }
 
-  static async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
+  static async deleteFile(bucketName: string, exerciseType: ExerciseTypes, objectName: string): Promise<boolean> {
     try {
-      await minioClient.removeObject(bucketName, objectName).then(() => { return true }).catch((err) => { console.log(err); throw err; });
+      const fileName = `${exerciseType}/${objectName}`;
+      await minioClient.removeObject(bucketName, fileName).then(() => { return true }).catch((err) => { console.log(err); throw err; });
       return true;
     } catch (error: any) {
       console.error('Repository Error:', error.message);
-      throw new Error(`repo - deleteFile: ${error}`);
+      // throw new Error(`repo - deleteFile: ${error}`);
+      return false;
     }
   }
 

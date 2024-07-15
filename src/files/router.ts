@@ -27,6 +27,6 @@ filesRouter
     .put("/updateMetadata/:bucketName/:fileName", MinioController.updateMetadata)
     .put("/renameObject", MinioController.renameObject);
 
-filesRouter.delete("/delete/:objectName", MinioController.deleteFile);
+filesRouter.delete("/delete/:bucketName/:exerciseType/:objectName", MinioController.deleteFile);
 
 export default filesRouter;

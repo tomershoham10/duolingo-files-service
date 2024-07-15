@@ -83,9 +83,9 @@ export default class MinioManager {
     }
   }
 
-  static async deleteFile(bucketName: string, objectName: string): Promise<boolean> {
+  static async deleteFile(bucketName: string, exerciseType: ExerciseTypes, objectName: string): Promise<boolean> {
     try {
-      const response = await MinioRepository.deleteFile(bucketName, objectName);
+      const response = await MinioRepository.deleteFile(bucketName,exerciseType, objectName);
       return response;
     } catch (error: any) {
       console.error('Manager Error [deleteFile]:', error.message);
