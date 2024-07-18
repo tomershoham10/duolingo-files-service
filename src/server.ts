@@ -1,13 +1,13 @@
-import express from "express";
-import cors from "cors";
-import multer from "multer";
-import bodyParser from "body-parser";
-import router from "./router.js";
-import config from "./utils/config.js";
+import express from 'express';
+import cors from 'cors';
+// import multer from 'multer';
+import bodyParser from 'body-parser';
+import router from './router.js';
+import config from './utils/config.js';
 
-import { Client } from "minio";
+import { Client } from 'minio';
 // import { errorHandler } from "./middleware/errorHandler.js";
-import { Express } from "express-serve-static-core";
+import { Express } from 'express-serve-static-core';
 
 const startServer = () => {
   const port = config.http.port;
@@ -21,7 +21,7 @@ const startServer = () => {
 };
 
 const configureMiddlewares = (app: Express) => {
-  const storage = multer.memoryStorage(); // Use memory storage for simplicity; adjust as needed
+  // const storage = multer.memoryStorage(); // Use memory storage for simplicity; adjust as needed
   // const upload = multer({ storage: storage });
   // const storage = multer.memoryStorage();
   // const limits = {
@@ -33,9 +33,9 @@ const configureMiddlewares = (app: Express) => {
   // });
   app.use(
     cors({
-      origin: ["http://localhost:3000", "blob:"],
+      origin: ['http://localhost:3000', 'blob:'],
       credentials: true,
-      exposedHeaders: ["Authorization", "metaData"],
+      exposedHeaders: ['Authorization', 'metaData'],
     })
   );
   app.use(bodyParser.json({ limit: '200mb' }));
@@ -43,7 +43,6 @@ const configureMiddlewares = (app: Express) => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   // app.use(errorHandler);
-
 
   // app.post('/api/files/upload', upload.single('file'), async (req, res, next) => {
   //   const file = req.file;
@@ -61,13 +60,12 @@ const configureMiddlewares = (app: Express) => {
   // });
 };
 
-
 const minioClient = new Client({
-  endPoint: "server-minio-1", // Replace with your MinIO server hostname
+  endPoint: 'server-minio-1', // Replace with your MinIO server hostname
   port: 9000, // MinIO server port
   useSSL: false, // Set to true if you want to use SSL
-  accessKey: "your-minio-access-key", // Your MinIO access key
-  secretKey: "your-minio-secret-key", // Your MinIO secret key
+  accessKey: 'your-minio-access-key', // Your MinIO access key
+  secretKey: 'your-minio-secret-key', // Your MinIO secret key
 });
 
 export { minioClient };

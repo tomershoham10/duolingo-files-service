@@ -1,8 +1,6 @@
-import { Readable } from "stream";
+import { Readable } from 'stream';
 
-export enum BucketsNames {
-  
-}
+export enum BucketsNames {}
 
 export enum SignatureTypes {
   PASSIVE = 'passive',
@@ -13,19 +11,23 @@ export enum SignatureTypes {
 
 export enum SonarSystem {
   DEMON = 'demon',
-  LOFAR = 'lofar'
+  LOFAR = 'lofar',
 }
 
 export enum ExerciseTypes {
-  FSA = "fsa",
-  SPOTRECC = "sporrecc"
+  FSA = 'fsa',
+  SPOTRECC = 'sporrecc',
 }
 
 export enum FeaturesList {
-  NUMBER_OF_BLADES = "numberOfBlades",
+  NUMBER_OF_BLADES = 'numberOfBlades',
 }
 
-export type Metadata = FSAMetadata | SonogramMetadata | SpotreccRecordMetadata | SpotreccImageMetadata;
+export type Metadata =
+  | FSAMetadata
+  | SonogramMetadata
+  | SpotreccRecordMetadata
+  | SpotreccImageMetadata;
 
 interface RecordMetadata {
   record_length: number;

@@ -1,19 +1,25 @@
 // manager.ts
-import { BucketItemFromList, UploadedObjectInfo } from "minio";
-import MinioRepository from "./repository.js";
-import { ExerciseTypes, Metadata } from "./model.js";
-import { Readable } from "stream";
+import { BucketItemFromList, UploadedObjectInfo } from 'minio';
+import MinioRepository from './repository.js';
+import { ExerciseTypes, Metadata } from './model.js';
+import { Readable } from 'stream';
 
 export default class MinioManager {
   static async uploadFile(
     bucketName: string,
     exerciseType: ExerciseTypes,
     metadata: Partial<Metadata>,
-    file: Express.Multer.File): Promise<UploadedObjectInfo | null> {
+    file: Express.Multer.File
+  ): Promise<UploadedObjectInfo | null> {
     try {
-      console.log("manager - uploadFile");
-      const minioResult = await MinioRepository.uploadFile(bucketName, exerciseType, metadata, file);
-      console.log("manager - uploadFile result", minioResult);
+      console.log('manager - uploadFile');
+      const minioResult = await MinioRepository.uploadFile(
+        bucketName,
+        exerciseType,
+        metadata,
+        file
+      );
+      console.log('manager - uploadFile result', minioResult);
       if (!minioResult) {
         throw new Error('Error uploading file');
       }
@@ -24,25 +30,45 @@ export default class MinioManager {
     }
   }
 
-  static async getFileByName(bucketName: string, exerciseType: ExerciseTypes, objectName: string): Promise<{ stream: Readable, metadata: Metadata }> {
+  static async getFileByName(
+    bucketName: string,
+    exerciseType: ExerciseTypes,
+    objectName: string
+  ): Promise<{ stream: Readable; metadata: Metadata }> {
     const fileName = `${exerciseType}/${objectName}`;
-    const fileObject = await MinioRepository.getFileByName(bucketName, fileName);
+    const fileObject = await MinioRepository.getFileByName(
+      bucketName,
+      fileName
+    );
     return fileObject;
-  };
+  }
 
-  static async getFileMetadataByName(bucketName: string, exerciseType: ExerciseTypes, objectName: string): Promise<Metadata> {
+  static async getFileMetadataByName(
+    bucketName: string,
+    exerciseType: ExerciseTypes,
+    objectName: string
+  ): Promise<Metadata> {
     const fileName = `${exerciseType}/${objectName}`;
-    const metadata = await MinioRepository.getFileMetadataByName(bucketName, fileName);
+    const metadata = await MinioRepository.getFileMetadataByName(
+      bucketName,
+      fileName
+    );
     return metadata;
-  };
+  }
 
-  static async getFileMetadataByETag(bucketName: string, etag: string): Promise<{
-    name: string,
-    id: string,
-    metadata: Partial<Metadata>
+  static async getFileMetadataByETag(
+    bucketName: string,
+    etag: string
+  ): Promise<{
+    name: string;
+    id: string;
+    metadata: Partial<Metadata>;
   } | null> {
     try {
-      const objectInfo = await MinioRepository.getFileMetadataByETag(bucketName, etag);
+      const objectInfo = await MinioRepository.getFileMetadataByETag(
+        bucketName,
+        etag
+      );
       return objectInfo;
     } catch (error: any) {
       console.error('Error retrieving file metadata (manager):', error.message);
@@ -50,11 +76,22 @@ export default class MinioManager {
     }
   }
 
-  static async getAllFilesByBucket(bucketName: string, prefix: string = ''): Promise<{
-    id: string; name: string; exerciseType: ExerciseTypes; metadata: Partial<Metadata>
-  }[]> {
+  static async getAllFilesByBucket(
+    bucketName: string,
+    prefix: string = ''
+  ): Promise<
+    {
+      id: string;
+      name: string;
+      exerciseType: ExerciseTypes;
+      metadata: Partial<Metadata>;
+    }[]
+  > {
     try {
-      const files = await MinioRepository.getAllFilesByBucket(bucketName, prefix);
+      const files = await MinioRepository.getAllFilesByBucket(
+        bucketName,
+        prefix
+      );
       return files;
     } catch (error: any) {
       console.error('Manager Error [getAllFilesByBucket]:', error.message);
@@ -62,8 +99,10 @@ export default class MinioManager {
     }
   }
 
-
-  static async isFileExisted(fileName: string, bucketName: string): Promise<boolean> {
+  static async isFileExisted(
+    fileName: string,
+    bucketName: string
+  ): Promise<boolean> {
     try {
       const status = await MinioRepository.isFileExisted(fileName, bucketName);
       return status;
@@ -73,9 +112,17 @@ export default class MinioManager {
     }
   }
 
-  static async updateMetadata(fileName: string, bucketName: string, meatadata: Partial<Metadata>): Promise<UploadedObjectInfo | null> {
+  static async updateMetadata(
+    fileName: string,
+    bucketName: string,
+    meatadata: Partial<Metadata>
+  ): Promise<UploadedObjectInfo | null> {
     try {
-      const updatedFile = await MinioRepository.updateMetadata(fileName, bucketName, meatadata);
+      const updatedFile = await MinioRepository.updateMetadata(
+        fileName,
+        bucketName,
+        meatadata
+      );
       return updatedFile;
     } catch (error: any) {
       console.error('Manager Error [updateMetadata]:', error.message);
@@ -83,9 +130,17 @@ export default class MinioManager {
     }
   }
 
-  static async deleteFile(bucketName: string, exerciseType: ExerciseTypes, objectName: string): Promise<boolean> {
+  static async deleteFile(
+    bucketName: string,
+    exerciseType: ExerciseTypes,
+    objectName: string
+  ): Promise<boolean> {
     try {
-      const response = await MinioRepository.deleteFile(bucketName,exerciseType, objectName);
+      const response = await MinioRepository.deleteFile(
+        bucketName,
+        exerciseType,
+        objectName
+      );
       return response;
     } catch (error: any) {
       console.error('Manager Error [deleteFile]:', error.message);
@@ -111,9 +166,17 @@ export default class MinioManager {
     }
   }
 
-  static async renameObject(bucketName: string, oldObjectName: string, newObjectName: string): Promise<boolean> {
+  static async renameObject(
+    bucketName: string,
+    oldObjectName: string,
+    newObjectName: string
+  ): Promise<boolean> {
     try {
-      return MinioRepository.renameObject(bucketName, oldObjectName, newObjectName);
+      return MinioRepository.renameObject(
+        bucketName,
+        oldObjectName,
+        newObjectName
+      );
     } catch (error: any) {
       console.error('Manager Error [renameObject]:', error.message);
       throw new Error('Error in renameObject');

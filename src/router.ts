@@ -1,5 +1,5 @@
-import { Router, Request, Response } from "express";
-import filesRouter from "./files/router.js";
+import { Router, Request, Response } from 'express';
+import filesRouter from './files/router.js';
 
 const router = Router();
 // const requestLoggerMiddleware: express.RequestHandler = (
@@ -15,12 +15,11 @@ const router = Router();
 // };
 // router.use(requestLoggerMiddleware);
 
-
-router.get("/health", (_req: Request, res: Response) => {
-  console.log("health");
-  res.status(200).send("Alive");
+router.get('/health', (_req: Request, res: Response) => {
+  console.log('health');
+  res.status(200).send('Alive');
 });
 
-router.use("/api/files/", filesRouter);
+router.use('/api/files/', filesRouter);
 
 export default router;
