@@ -56,7 +56,7 @@ export default class MinioController {
       const result = await MinioManager.uploadFile(
         bucketName,
         exerciseType,
-        metadata,
+        metadataObj,
         file
       );
       console.log(

@@ -197,9 +197,13 @@ export default class MinioRepository {
             .statObject(bucketName, object.name)
             .then((stat) => {
               const metadata = stat.metaData as ItemBucketMetadata;
+              console.log('metadata', metadata);
               const metaKeys = Object.keys(metadata);
               console.log('metaKeys', metaKeys);
               const convertedMetadata = getFormattedMetadata(metadata);
+              console.log('convertedMetadata', convertedMetadata);
+              const convertedMetadata2 = getFormattedMetadata(metadata);
+              console.log('convertedMetadata2', convertedMetadata2);
 
               files.push({
                 id: stat.etag,
@@ -226,7 +230,7 @@ export default class MinioRepository {
           try {
             await Promise.all(statPromises); // Wait for all statObject calls to complete
             console.log('repo - getAllFilesByBucket - files', files);
-            const filesWithExerciseType = files.map((file) => {
+            let filesWithExerciseType = files.map((file) => {
               const filePrefixAndName = file.name.split('/');
               return {
                 id: file.id,
@@ -237,9 +241,12 @@ export default class MinioRepository {
             });
 
             if (prefix !== '') {
-              filesWithExerciseType.filter(
-                (file) => file.exerciseType === prefix
+              // console.log('prefix check', filesWithExerciseType, prefix);
+              filesWithExerciseType = filesWithExerciseType.filter(
+                (item) => item.exerciseType === prefix
               );
+
+              // console.log('after filter', filesWithExerciseType);
             }
             resolve(filesWithExerciseType);
           } catch (error) {
