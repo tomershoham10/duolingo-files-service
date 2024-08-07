@@ -1,0 +1,10 @@
+.vscode
+.git
+.gitignore
+.env
+dist
+Dockerfile*
+docker-compose*
+README.md
+LICENSE
+*.tar
