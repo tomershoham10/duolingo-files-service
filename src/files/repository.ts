@@ -6,7 +6,7 @@ import {
   ItemBucketMetadata,
   UploadedObjectInfo,
 } from 'minio';
-import { ExerciseTypes, Metadata } from './model.js';
+import { ExerciseTypes, FilesTypes, Metadata } from './model.js';
 import { getFormattedMetadata } from '../utils/getFormattedMetadata.js';
 
 export default class MinioRepository {
@@ -15,7 +15,7 @@ export default class MinioRepository {
     objectName: string,
     fileStream: NodeJS.ReadableStream,
     size: number,
-    metadata: Partial<Metadata>
+    metadata?: Partial<Metadata>
   ): Promise<UploadedObjectInfo | null> {
     try {
       return new Promise<UploadedObjectInfo>((resolve, reject) => {
@@ -53,20 +53,52 @@ export default class MinioRepository {
     }
   }
 
+  // static async uploadFile(
+  //   bucketName: string,
+  //   exerciseType: ExerciseTypes,
+  //   metadata: Partial<Metadata>,
+  //   file: Express.Multer.File
+  // ): Promise<UploadedObjectInfo | null> {
+  //   try {
+  //     // Handle single file
+  //     const fileStream = new PassThrough();
+  //     fileStream.end(file.buffer);
+  //     const fileName = `${exerciseType}/${file.originalname}`;
+
+  //     const res = await MinioRepository.putObjectPromise(
+  //       bucketName,
+  //       fileName,
+  //       fileStream,
+  //       file.size as number,
+  //       metadata
+  //     );
+
+  //     // Wait for all uploads to complete
+
+  //     console.log('repo - upload - success', res);
+  //     return res;
+  //   } catch (error: any) {
+  //     console.error('Repository uploading Error:', error.message);
+  //     return null;
+  //   }
+  // }
+
   static async uploadFile(
-    bucketName: string,
-    exerciseType: ExerciseTypes,
-    metadata: Partial<Metadata>,
-    file: Express.Multer.File
+    mainId: string,
+    subtypeId: string,
+    modelId: string,
+    fileType: FilesTypes,
+    file: Express.Multer.File,
+    metadata?: Partial<Metadata>,
   ): Promise<UploadedObjectInfo | null> {
     try {
       // Handle single file
       const fileStream = new PassThrough();
       fileStream.end(file.buffer);
-      const fileName = `${exerciseType}/${file.originalname}`;
+      const fileName = `$${subtypeId}/${modelId}/${fileType}/${file.originalname}`;
 
       const res = await MinioRepository.putObjectPromise(
-        bucketName,
+        mainId,
         fileName,
         fileStream,
         file.size as number,
