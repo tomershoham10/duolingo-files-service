@@ -1,6 +1,9 @@
 import { Readable } from 'stream';
 
-export enum BucketsNames {}
+export enum FilesTypes {
+  RECORDS = 'records',
+  IMAGES = 'images'
+}
 
 export enum SignatureTypes {
   PASSIVE = 'passive',
