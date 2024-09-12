@@ -1,5 +1,24 @@
 import { Readable } from 'stream';
 
+export type FileMetadata = {
+  id: string;
+  name: string;
+  metadata: Partial<Metadata>;
+};
+
+type FileTypeGroup = {
+  images: FileMetadata[];
+  records: FileMetadata[];
+};
+
+type ModelGroup = {
+  [modelId: string]: FileTypeGroup;
+};
+
+export type SubTypeGroup = {
+  [subId: string]: ModelGroup;
+};
+
 export enum FilesTypes {
   RECORDS = 'records',
   IMAGES = 'images'
