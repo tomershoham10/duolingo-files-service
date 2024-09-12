@@ -9,21 +9,25 @@ const upload = multer({ storage: storage });
 
 filesRouter
   .get(
-    '/getFileByName/:bucketName/:exerciseType/:objectName',
+    '/getFileByName/:mainId/:subtypeId/:modelId/:fileType/:objectName',
     MinioController.getFileByName
   )
   .get(
-    '/downloadEncryptedZip/:bucketName/:exerciseType/:objectName',
+    '/downloadEncryptedZip/:mainId/:subtypeId/:modelId/:fileType/:objectName',
     MinioController.downloadEncryptedZip
   )
   .get(
-    '/getFileMetadataByName/:bucketName/:exerciseType/:objectName',
+    '/getFileMetadataByName/:mainId/:subtypeId/:modelId/:fileType/:objectName',
     MinioController.getFileMetadataByName
   )
-  .get(
-    '/getFilesByBucketAndType/:bucketName/:exerciseType',
-    MinioController.getAllFilesByBucketAndType
-  )
+  // .get(
+  //   '/getFilesByBucketAndType/:bucketName/:exerciseType',
+  //   MinioController.getAllFilesByBucketAndType
+  // )
+  // .get(
+  //   '/getModelIdFiles/:mainId/:subtypeId/:modelId',
+  //   MinioController.getModelIdFiles
+  // )
   .get('/getFilesByBucket/:bucketName', MinioController.getAllFilesByBucket)
   .get(
     '/getMetadataByEtag/:bucketName/:etag',
@@ -38,7 +42,7 @@ filesRouter
 filesRouter
   .post(
     '/uploadFilesArray',
-    upload.array('file'),
+    upload.array('files', 10),
     MinioController.uploadFilesArray
   )
   .post('/uploadFile', upload.single('file'), MinioController.uploadFile)

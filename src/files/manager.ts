@@ -1,23 +1,27 @@
 // manager.ts
 import { BucketItemFromList, UploadedObjectInfo } from 'minio';
 import MinioRepository from './repository.js';
-import { ExerciseTypes, Metadata } from './model.js';
+import { ExerciseTypes, FilesTypes, Metadata } from './model.js';
 import { Readable } from 'stream';
 
 export default class MinioManager {
   static async uploadFile(
-    bucketName: string,
-    exerciseType: ExerciseTypes,
-    metadata: Partial<Metadata>,
-    file: Express.Multer.File
+    mainId: string,
+    subtypeId: string,
+    modelId: string,
+    fileType: FilesTypes,
+    file: Express.Multer.File,
+    metadata?: Partial<Metadata>
   ): Promise<UploadedObjectInfo | null> {
     try {
       console.log('manager - uploadFile');
       const minioResult = await MinioRepository.uploadFile(
-        bucketName,
-        exerciseType,
+        mainId,
+        subtypeId,
+        modelId,
+        fileType,
+        file,
         metadata,
-        file
       );
       console.log('manager - uploadFile result', minioResult);
       if (!minioResult) {
@@ -31,26 +35,30 @@ export default class MinioManager {
   }
 
   static async getFileByName(
-    bucketName: string,
-    exerciseType: ExerciseTypes,
+    mainId: string,
+    subtypeId: string,
+    modelId: string,
+    fileType: string,
     objectName: string
   ): Promise<{ stream: Readable; metadata: Metadata }> {
-    const fileName = `${exerciseType}/${objectName}`;
+    const fileName = `${subtypeId}/${modelId}/${fileType}/${objectName}`;
     const fileObject = await MinioRepository.getFileByName(
-      bucketName,
+      mainId,
       fileName
     );
     return fileObject;
   }
 
   static async getFileMetadataByName(
-    bucketName: string,
-    exerciseType: ExerciseTypes,
-    objectName: string
+    mainId: string,
+    subtypeId: string,
+    modelId: string,
+    fileType: string,
+    objectName: string,
   ): Promise<Metadata> {
-    const fileName = `${exerciseType}/${objectName}`;
+    const fileName = `${subtypeId}/${modelId}/${fileType}/${objectName}`;
     const metadata = await MinioRepository.getFileMetadataByName(
-      bucketName,
+      mainId,
       fileName
     );
     return metadata;

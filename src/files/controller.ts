@@ -2,7 +2,7 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import MinioManager from './manager.js';
-import { ExerciseTypes, Metadata } from './model.js';
+import { ExerciseTypes, FilesTypes, Metadata } from './model.js';
 import FormData from 'form-data';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -11,16 +11,21 @@ const passwordKey = process.env.PASSWORD_KEY || 'password';
 export default class MinioController {
   static async getFileByName(req: Request, res: Response): Promise<void> {
     try {
-      const { bucketName, exerciseType, objectName } = req.params as {
-        bucketName: string;
-        exerciseType: ExerciseTypes;
+      const { mainId, subtypeId, modelId, fileType, objectName
+      } = req.params as {
+        mainId: string;
+        subtypeId: string;
+        modelId: string;
+        fileType: string;
         objectName: string;
       };
       // const bucketName = req.params.bucketName;
       // const objectName = req.params.objectName;
       const objectData = await MinioManager.getFileByName(
-        bucketName,
-        exerciseType,
+        mainId,
+        subtypeId,
+        modelId,
+        fileType,
         objectName
       );
       const imageStream = objectData.stream;
@@ -44,7 +49,7 @@ export default class MinioController {
         'controller - uploadFile body',
         req.body
       );
-      const { bucketName, metadata, exerciseType } = req.body;
+      const { mainId, subtypeId, modelId, fileType, metadata } = req.body;
       const metadataObj: Partial<Metadata> = JSON.parse(metadata);
       console.log('controller - uploadFile - metadata', metadataObj, metadata);
       const file: Express.Multer.File | undefined = req.file;
@@ -54,10 +59,12 @@ export default class MinioController {
           .json({ success: false, message: 'File was not provided.' });
       }
       const result = await MinioManager.uploadFile(
-        bucketName,
-        exerciseType,
+        mainId,
+        subtypeId,
+        modelId,
+        fileType,
+        file,
         metadataObj,
-        file
       );
       console.log(
         'controller - uploadFile - Single file uploaded successfully:',
@@ -86,8 +93,7 @@ export default class MinioController {
         'controller - uploadFile body',
         req.body
       );
-      const { bucketName, metadataString, exerciseType } = req.body;
-      const metadata: Partial<Metadata> = JSON.parse(metadataString);
+      const { mainId, subtypeId, modelId } = req.body;
       const files:
         | Express.Multer.File[]
         | { [fieldname: string]: Express.Multer.File[] }
@@ -97,11 +103,16 @@ export default class MinioController {
           .status(400)
           .json({ success: false, message: 'No files provided.' });
       }
+
+      console.log('controller - uploadFilesArray - data: ', mainId, subtypeId, modelId);
+      console.log('controller - uploadFilesArray - files: ', files);
       const uploadPromises = files.map(async (file) => {
+        const fileType = file.originalname.endsWith('.wav') ? FilesTypes.RECORDS : FilesTypes.IMAGES
         return MinioManager.uploadFile(
-          bucketName,
-          exerciseType,
-          metadata,
+          mainId,
+          subtypeId,
+          modelId,
+          fileType,
           file
         );
       });
@@ -127,17 +138,16 @@ export default class MinioController {
     res: Response
   ): Promise<void> {
     try {
-      const { bucketName, exerciseType, objectName } = req.params as {
-        bucketName: string;
-        exerciseType: ExerciseTypes;
+      const { mainId, subtypeId, modelId, fileType, objectName
+      } = req.params as {
+        mainId: string;
+        subtypeId: string;
+        modelId: string;
+        fileType: string;
         objectName: string;
       };
-      // const bucketName = req.params.bucketName;
-      // const objectName = req.params.objectName;
       const metaData = await MinioManager.getFileMetadataByName(
-        bucketName,
-        exerciseType,
-        objectName
+        mainId, subtypeId, modelId, fileType, objectName
       );
       console.log('controller - getFileMetadataByName', metaData);
 
@@ -163,16 +173,17 @@ export default class MinioController {
         process.env.AUTH_SERVICE_URL ||
         'http://authentication-service:4000/api/auth/getRecordZipPassword';
 
-      const { bucketName, exerciseType, objectName } = req.params as {
-        bucketName: string;
-        exerciseType: ExerciseTypes;
+      const { mainId, subtypeId, modelId, fileType, objectName
+      } = req.params as {
+        mainId: string;
+        subtypeId: string;
+        modelId: string;
+        fileType: string;
         objectName: string;
       };
 
       const objectData = await MinioManager.getFileByName(
-        bucketName,
-        exerciseType,
-        objectName
+        mainId, subtypeId, modelId, fileType, objectName
       );
       const imageStream = objectData.stream;
       const metaData = objectData.metadata;
