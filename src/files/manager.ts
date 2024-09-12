@@ -1,7 +1,7 @@
 // manager.ts
 import { BucketItemFromList, UploadedObjectInfo } from 'minio';
 import MinioRepository from './repository.js';
-import { ExerciseTypes, FilesTypes, Metadata } from './model.js';
+import { ExerciseTypes, FilesTypes, Metadata, SubTypeGroup } from './model.js';
 import { Readable } from 'stream';
 
 export default class MinioManager {
@@ -64,37 +64,30 @@ export default class MinioManager {
     return metadata;
   }
 
-  static async getFileMetadataByETag(
-    bucketName: string,
-    etag: string
-  ): Promise<{
-    name: string;
-    id: string;
-    metadata: Partial<Metadata>;
-  } | null> {
-    try {
-      const objectInfo = await MinioRepository.getFileMetadataByETag(
-        bucketName,
-        etag
-      );
-      return objectInfo;
-    } catch (error: any) {
-      console.error('Error retrieving file metadata (manager):', error.message);
-      throw new Error(`getFileMetadataByETag: ${error}`);
-    }
-  }
+  // static async getFileMetadataByETag(
+  //   bucketName: string,
+  //   etag: string
+  // ): Promise<{
+  //   name: string;
+  //   id: string;
+  //   metadata: Partial<Metadata>;
+  // } | null> {
+  //   try {
+  //     const objectInfo = await MinioRepository.getFileMetadataByETag(
+  //       bucketName,
+  //       etag
+  //     );
+  //     return objectInfo;
+  //   } catch (error: any) {
+  //     console.error('Error retrieving file metadata (manager):', error.message);
+  //     throw new Error(`getFileMetadataByETag: ${error}`);
+  //   }
+  // }
 
   static async getAllFilesByBucket(
     bucketName: string,
     prefix: string = ''
-  ): Promise<
-    {
-      id: string;
-      name: string;
-      exerciseType: ExerciseTypes;
-      metadata: Partial<Metadata>;
-    }[]
-  > {
+  ): Promise<SubTypeGroup> {
     try {
       const files = await MinioRepository.getAllFilesByBucket(
         bucketName,

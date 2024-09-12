@@ -240,30 +240,30 @@ export default class MinioController {
     }
   }
 
-  static async getMetadataByETag(req: Request, res: Response) {
-    const { bucketName, etag } = req.params as {
-      bucketName: string;
-      etag: string;
-    };
-    // const bucketName = req.params.bucketName;
-    // const etag = req.params.etag;
+  // static async getMetadataByETag(req: Request, res: Response) {
+  //   const { bucketName, etag } = req.params as {
+  //     bucketName: string;
+  //     etag: string;
+  //   };
+  //   // const bucketName = req.params.bucketName;
+  //   // const etag = req.params.etag;
 
-    try {
-      const objectInfo = await MinioManager.getFileMetadataByETag(
-        bucketName,
-        etag
-      );
+  //   try {
+  //     const objectInfo = await MinioManager.getFileMetadataByETag(
+  //       bucketName,
+  //       etag
+  //     );
 
-      if (objectInfo) {
-        res.status(200).json(objectInfo);
-      } else {
-        res.status(404).json({ error: 'File not found' });
-      }
-    } catch (error: any) {
-      console.error('Controller getMetadataByETag Error:', error.message);
-      res.status(500).json({ error: error.message });
-    }
-  }
+  //     if (objectInfo) {
+  //       res.status(200).json(objectInfo);
+  //     } else {
+  //       res.status(404).json({ error: 'File not found' });
+  //     }
+  //   } catch (error: any) {
+  //     console.error('Controller getMetadataByETag Error:', error.message);
+  //     res.status(500).json({ error: error.message });
+  //   }
+  // }
 
   static async getAllFilesByBucket(req: Request, res: Response) {
     try {

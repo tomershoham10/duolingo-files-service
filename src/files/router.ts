@@ -29,10 +29,10 @@ filesRouter
   //   MinioController.getModelIdFiles
   // )
   .get('/getFilesByBucket/:bucketName', MinioController.getAllFilesByBucket)
-  .get(
-    '/getMetadataByEtag/:bucketName/:etag',
-    MinioController.getMetadataByETag
-  )
+  // .get(
+  //   '/getMetadataByEtag/:bucketName/:etag',
+  //   MinioController.getMetadataByETag
+  // )
   .get(
     '/isFileExisted/:bucketName/:exerciseType/:fileName',
     MinioController.isFileExisted
