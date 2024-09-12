@@ -9,12 +9,17 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
+    "prettier",
     "plugin:prettier/recommended"
   ],
   "env": {
     "node": true
   },
+  "plugins": [
+    "prettier"
+  ],
   "rules": {
+    "prettier/prettier": 0,
     "@typescript-eslint/no-explicit-any": "off"
   },
   "ignorePatterns": [
