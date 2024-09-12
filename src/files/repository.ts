@@ -6,7 +6,7 @@ import {
   ItemBucketMetadata,
   UploadedObjectInfo,
 } from 'minio';
-import { ExerciseTypes, FilesTypes, Metadata } from './model.js';
+import { ExerciseTypes, FileMetadata, FilesTypes, Metadata, SubTypeGroup } from './model.js';
 import { getFormattedMetadata } from '../utils/getFormattedMetadata.js';
 
 export default class MinioRepository {
@@ -198,22 +198,15 @@ export default class MinioRepository {
   static async getAllFilesByBucket(
     bucketName: string,
     prefix: string
-  ): Promise<
-    {
-      id: string;
-      name: string;
-      exerciseType: ExerciseTypes;
-      metadata: Partial<Metadata>;
-    }[]
-  > {
+  ): Promise<SubTypeGroup> {
     try {
+      console.log('prefix', prefix);
       const objectsStream: Stream = minioClient.listObjects(
         bucketName,
         '',
         true
       );
-      const files: { name: string; id: string; metadata: Partial<Metadata> }[] =
-        [];
+      const files: FileMetadata[] = [];
 
       const statPromises: Promise<void>[] = [];
 
@@ -262,25 +255,65 @@ export default class MinioRepository {
           try {
             await Promise.all(statPromises); // Wait for all statObject calls to complete
             console.log('repo - getAllFilesByBucket - files', files);
-            let filesWithExerciseType = files.map((file) => {
-              const filePrefixAndName = file.name.split('/');
-              return {
+
+            const groupedFiles: SubTypeGroup = {};
+
+            // let filesWithExerciseType = files.map((file) => {
+            //   const filePrefixAndName = file.name.split('/');
+            //   return {
+            //     id: file.id,
+            //     name: filePrefixAndName[1],
+            //     exerciseType: filePrefixAndName[0] as ExerciseTypes,
+            //     metadata: file.metadata,
+            //   };
+            // });
+
+            files.forEach((file) => {
+              const [subId, modelId, fileType, fileName] = file.name.split('/');
+
+              // Initialize subId group
+              if (!groupedFiles[subId]) {
+                groupedFiles[subId] = {};
+              }
+
+              // Initialize modelId group
+              if (!groupedFiles[subId][modelId]) {
+                groupedFiles[subId][modelId] = {
+                  images: [],
+                  records: [],
+                };
+              }
+
+              // Add file to the appropriate fileType group
+              const metadata = {
                 id: file.id,
-                name: filePrefixAndName[1],
-                exerciseType: filePrefixAndName[0] as ExerciseTypes,
+                name: fileName,
                 metadata: file.metadata,
               };
+
+              if (fileType === FilesTypes.IMAGES) {
+                groupedFiles[subId][modelId].images.push(metadata);
+              } else if (fileType === FilesTypes.RECORDS) {
+                groupedFiles[subId][modelId].records.push(metadata);
+              }
             });
 
-            if (prefix !== '') {
-              // console.log('prefix check', filesWithExerciseType, prefix);
-              filesWithExerciseType = filesWithExerciseType.filter(
-                (item) => item.exerciseType === prefix
-              );
+            // if (prefix !== '') {
+            //   Object.keys(groupedFiles).forEach((subId) => {
+            //     const modelGroup = groupedFiles[subId];
+            //     Object.keys(modelGroup).forEach((modelId) => {
+            //       const fileTypeGroup = modelGroup[modelId];
+            //       fileTypeGroup.images
+            //       fileTypeGroup.records = fileTypeGroup.records.filter(
+            //         (item) => item.metadata.type === prefix
+            //       );
+            //     });
+            //   });
+            // }
 
-              // console.log('after filter', filesWithExerciseType);
-            }
-            resolve(filesWithExerciseType);
+            // console.log('after filter', filesWithExerciseType);
+
+            resolve(groupedFiles);
           } catch (error) {
             console.error('Error getAllFilesByBucket:', error);
             reject(error);
@@ -298,33 +331,33 @@ export default class MinioRepository {
     }
   }
 
-  static async getFileMetadataByETag(
-    bucketName: string,
-    etag: string
-  ): Promise<{
-    name: string;
-    id: string;
-    metadata: Partial<Metadata>;
-  } | null> {
-    try {
-      console.log('repo - getFileMetadataByETag etag', etag);
-      const bucketFiles = await MinioRepository.getAllFilesByBucket(
-        bucketName,
-        ''
-      );
-      const obj = bucketFiles.filter((file) => file.id === etag)[0];
-      console.log('repo - getFileMetadataByETag obj', obj);
-      return obj;
-    } catch (error: any) {
-      if (error.code === 'NotFound') {
-        console.error(`File with ETag ${etag} not found.`);
-        return null;
-      } else {
-        console.error('Error retrieving file metadata:', error.message);
-        throw new Error(`getFileMetadataByETag: ${error}`);
-      }
-    }
-  }
+  // static async getFileMetadataByETag(
+  //   bucketName: string,
+  //   etag: string
+  // ): Promise<{
+  //   name: string;
+  //   id: string;
+  //   metadata: Partial<Metadata>;
+  // } | null> {
+  //   try {
+  //     console.log('repo - getFileMetadataByETag etag', etag);
+  //     const bucketFiles = await MinioRepository.getAllFilesByBucket(
+  //       bucketName,
+  //       ''
+  //     );
+  //     const obj = bucketFiles.filter((file) => file.id === etag)[0];
+  //     console.log('repo - getFileMetadataByETag obj', obj);
+  //     return obj;
+  //   } catch (error: any) {
+  //     if (error.code === 'NotFound') {
+  //       console.error(`File with ETag ${etag} not found.`);
+  //       return null;
+  //     } else {
+  //       console.error('Error retrieving file metadata:', error.message);
+  //       throw new Error(`getFileMetadataByETag: ${error}`);
+  //     }
+  //   }
+  // }
 
   static async isFileExisted(
     fileName: string,
