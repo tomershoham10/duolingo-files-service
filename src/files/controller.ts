@@ -267,13 +267,21 @@ export default class MinioController {
 
   static async getAllFilesByBucket(req: Request, res: Response) {
     try {
-      const bucketName = req.params.bucketName;
+      const { mainId, subtypeId, modelId, fileType } = req.params;
       console.log(
         'files service controller - get all files by bucket',
-        bucketName
+        mainId, subtypeId, modelId, fileType
       );
 
-      const files = await MinioManager.getAllFilesByBucket(bucketName);
+      const prefix =
+        fileType ?
+          `${subtypeId}/${modelId}/${fileType}/` :
+          modelId ?
+            `${subtypeId}/${modelId}/` :
+            subtypeId ?
+              `${subtypeId}/` : ''
+
+      const files = await MinioManager.getAllFilesByBucket(mainId, prefix);
       console.log('files service controller - get all files by bucket', files);
       files
         ? res.status(200).json({ files })

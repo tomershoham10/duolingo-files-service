@@ -28,7 +28,7 @@ filesRouter
   //   '/getModelIdFiles/:mainId/:subtypeId/:modelId',
   //   MinioController.getModelIdFiles
   // )
-  .get('/getFilesByBucket/:bucketName', MinioController.getAllFilesByBucket)
+  .get('/getFilesByBucket/:mainId/:subtypeId?/:modelId?/:fileType?', MinioController.getAllFilesByBucket)
   // .get(
   //   '/getMetadataByEtag/:bucketName/:etag',
   //   MinioController.getMetadataByETag

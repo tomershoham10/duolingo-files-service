@@ -95,7 +95,7 @@ export default class MinioRepository {
       // Handle single file
       const fileStream = new PassThrough();
       fileStream.end(file.buffer);
-      const fileName = `$${subtypeId}/${modelId}/${fileType}/${file.originalname}`;
+      const fileName = `${subtypeId}/${modelId}/${fileType}/${file.originalname}`;
 
       const res = await MinioRepository.putObjectPromise(
         mainId,
@@ -197,13 +197,13 @@ export default class MinioRepository {
 
   static async getAllFilesByBucket(
     bucketName: string,
-    prefix: string
+    prefix?: string
   ): Promise<SubTypeGroup> {
     try {
       console.log('prefix', prefix);
       const objectsStream: Stream = minioClient.listObjects(
         bucketName,
-        '',
+        prefix || '',
         true
       );
       const files: FileMetadata[] = [];
@@ -257,16 +257,6 @@ export default class MinioRepository {
             console.log('repo - getAllFilesByBucket - files', files);
 
             const groupedFiles: SubTypeGroup = {};
-
-            // let filesWithExerciseType = files.map((file) => {
-            //   const filePrefixAndName = file.name.split('/');
-            //   return {
-            //     id: file.id,
-            //     name: filePrefixAndName[1],
-            //     exerciseType: filePrefixAndName[0] as ExerciseTypes,
-            //     metadata: file.metadata,
-            //   };
-            // });
 
             files.forEach((file) => {
               const [subId, modelId, fileType, fileName] = file.name.split('/');

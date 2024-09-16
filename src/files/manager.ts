@@ -86,7 +86,7 @@ export default class MinioManager {
 
   static async getAllFilesByBucket(
     bucketName: string,
-    prefix: string = ''
+    prefix: string
   ): Promise<SubTypeGroup> {
     try {
       const files = await MinioRepository.getAllFilesByBucket(
