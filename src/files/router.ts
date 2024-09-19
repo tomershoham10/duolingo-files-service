@@ -49,11 +49,11 @@ filesRouter
   .post('/create-bucket', MinioController.createBucket);
 
 filesRouter
-  .put('/updateMetadata/:bucketName/:fileName', MinioController.updateMetadata)
+  .put('/updateMetadata/:mainId/:subtypeId/:modelId/:fileType', MinioController.updateMetadata)
   .put('/renameObject', MinioController.renameObject);
 
 filesRouter.delete(
-  '/delete/:bucketName/:exerciseType/:objectName',
+  '/deleteFile/:mainId/:subtypeId/:modelId/:fileType/:objectName',
   MinioController.deleteFile
 );
 

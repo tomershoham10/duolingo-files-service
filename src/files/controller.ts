@@ -2,7 +2,7 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import MinioManager from './manager.js';
-import { ExerciseTypes, FilesTypes, Metadata } from './model.js';
+import { FilesTypes, Metadata } from './model.js';
 import FormData from 'form-data';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -340,13 +340,21 @@ export default class MinioController {
   }
 
   static async updateMetadata(req: Request, res: Response) {
-    const fileName = req.params.fileName;
-    const bucketName = req.params.bucketName;
-    const newMeata = req.body.metadata;
     try {
+      const {
+        mainId,
+        subtypeId,
+        modelId,
+        fileType
+      } = req.params
+      const objectName = req.body.objectName;
+      const newMeata = req.body.metadata;
       const file = await MinioManager.updateMetadata(
-        fileName,
-        bucketName,
+        mainId,
+        subtypeId,
+        modelId,
+        fileType,
+        objectName,
         newMeata
       );
       console.log(
@@ -361,13 +369,17 @@ export default class MinioController {
   }
 
   static async deleteFile(req: Request, res: Response) {
-    const { bucketName, exerciseType, objectName } = req.params as {
-      bucketName: string;
-      exerciseType: ExerciseTypes;
-      objectName: string;
-    };
     try {
-      await MinioManager.deleteFile(bucketName, exerciseType, objectName);
+      const {
+        mainId,
+        subtypeId,
+        modelId,
+        fileType,
+        objectName
+      } = req.params
+      const decodedFileName = decodeURIComponent(objectName);
+      console.log('controller - deleteFile - decodedFileName', decodedFileName);
+      await MinioManager.deleteFile(mainId, subtypeId, modelId, fileType, decodedFileName);
       res.status(200).json({ message: 'File deleted successfully' });
     } catch (error: any) {
       console.error('Controller deleteFile Error:', error.message);

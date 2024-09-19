@@ -6,7 +6,7 @@ import {
   ItemBucketMetadata,
   UploadedObjectInfo,
 } from 'minio';
-import { ExerciseTypes, FileMetadata, FilesTypes, Metadata, SubTypeGroup } from './model.js';
+import { FileMetadata, FilesTypes, Metadata, SubTypeGroup } from './model.js';
 import { getFormattedMetadata } from '../utils/getFormattedMetadata.js';
 
 export default class MinioRepository {
@@ -350,8 +350,8 @@ export default class MinioRepository {
   // }
 
   static async isFileExisted(
-    fileName: string,
-    bucketName: string
+    bucketName: string,
+    fileName: string
   ): Promise<boolean> {
     try {
       const fileStream = await minioClient.getObject(bucketName, fileName);
@@ -371,14 +371,12 @@ export default class MinioRepository {
   }
 
   static async deleteFile(
-    bucketName: string,
-    exerciseType: ExerciseTypes,
-    objectName: string
+    mainId: string,
+    fileName: string
   ): Promise<boolean> {
     try {
-      const fileName = `${exerciseType}/${objectName}`;
       await minioClient
-        .removeObject(bucketName, fileName)
+        .removeObject(mainId, fileName)
         .then(() => {
           return true;
         })
@@ -386,21 +384,22 @@ export default class MinioRepository {
           console.log(err);
           throw err;
         });
+      console.log('deleted');
       return true;
     } catch (error: any) {
-      console.error('Repository Error:', error.message);
+      console.error('Repository Error - deleteFile:', error.message);
       // throw new Error(`repo - deleteFile: ${error}`);
       return false;
     }
   }
 
   static async updateMetadata(
+    mainId: string,
     fileName: string,
-    bucketName: string,
     newMetadata: Partial<Metadata>
   ): Promise<UploadedObjectInfo | null> {
     try {
-      const objectInfo = await minioClient.statObject(bucketName, fileName);
+      const objectInfo = await minioClient.statObject(mainId, fileName);
       const existingMetadata = objectInfo.metaData;
 
       const updatedMetadata = {
@@ -411,7 +410,7 @@ export default class MinioRepository {
       console.log('newMetadata', newMetadata);
       console.log('updatedMetadata', updatedMetadata);
 
-      const getObjectStream = minioClient.getObject(bucketName, fileName);
+      const getObjectStream = minioClient.getObject(mainId, fileName);
 
       const chunks: Buffer[] = [];
 
@@ -432,7 +431,7 @@ export default class MinioRepository {
       const putObjectInfo = await new Promise<UploadedObjectInfo>(
         (resolve, reject) => {
           minioClient.putObject(
-            bucketName,
+            mainId,
             fileName,
             buffer,
             buffer.length,

@@ -1,7 +1,7 @@
 // manager.ts
 import { BucketItemFromList, UploadedObjectInfo } from 'minio';
 import MinioRepository from './repository.js';
-import { ExerciseTypes, FilesTypes, Metadata, SubTypeGroup } from './model.js';
+import { FilesTypes, Metadata, SubTypeGroup } from './model.js';
 import { Readable } from 'stream';
 
 export default class MinioManager {
@@ -114,14 +114,19 @@ export default class MinioManager {
   }
 
   static async updateMetadata(
-    fileName: string,
-    bucketName: string,
+    mainId: string,
+    subtypeId: string,
+    modelId: string,
+    fileType: string,
+    objectName: string,
     meatadata: Partial<Metadata>
   ): Promise<UploadedObjectInfo | null> {
     try {
+      const fileName = `${subtypeId}/${modelId}/${fileType}/${objectName}`;
+
       const updatedFile = await MinioRepository.updateMetadata(
+        mainId,
         fileName,
-        bucketName,
         meatadata
       );
       return updatedFile;
@@ -132,15 +137,18 @@ export default class MinioManager {
   }
 
   static async deleteFile(
-    bucketName: string,
-    exerciseType: ExerciseTypes,
+    mainId: string,
+    subtypeId: string,
+    modelId: string,
+    fileType: string,
     objectName: string
   ): Promise<boolean> {
     try {
+      const fileName = `${subtypeId}/${modelId}/${fileType}/${objectName}`;
+      console.log('manager - deleteFile - fileName', fileName);
       const response = await MinioRepository.deleteFile(
-        bucketName,
-        exerciseType,
-        objectName
+        mainId,
+        fileName
       );
       return response;
     } catch (error: any) {
