@@ -3,8 +3,38 @@ import { BucketItemFromList, UploadedObjectInfo } from 'minio';
 import MinioRepository from './repository.js';
 import { FilesTypes, Metadata, SubTypeGroup } from './model.js';
 import { Readable } from 'stream';
+import { getAudioDuration } from '../utils/getAudioDuration.js';
 
 export default class MinioManager {
+  // static async uploadFile(
+  //   mainId: string,
+  //   subtypeId: string,
+  //   modelId: string,
+  //   fileType: FilesTypes,
+  //   file: Express.Multer.File,
+  //   metadata?: Partial<Metadata>
+  // ): Promise<UploadedObjectInfo | null> {
+  //   try {
+  //     console.log('manager - uploadFile');
+  //     const minioResult = await MinioRepository.uploadFile(
+  //       mainId,
+  //       subtypeId,
+  //       modelId,
+  //       fileType,
+  //       file,
+  //       metadata,
+  //     );
+  //     console.log('manager - uploadFile result', minioResult);
+  //     if (!minioResult) {
+  //       throw new Error('Error uploading file');
+  //     }
+  //     return minioResult;
+  //   } catch (error: any) {
+  //     console.error('Manager Error [uploadFile]:', error.message);
+  //     return null;
+  //   }
+  // }
+
   static async uploadFile(
     mainId: string,
     subtypeId: string,
@@ -14,19 +44,38 @@ export default class MinioManager {
     metadata?: Partial<Metadata>
   ): Promise<UploadedObjectInfo | null> {
     try {
-      console.log('manager - uploadFile');
+      console.log('manager - uploadFile: file', file, Object.keys(file));
+
+
+      if (fileType === FilesTypes.RECORDS) {
+        const durationInSeconds = await getAudioDuration(file);
+        if (durationInSeconds) {
+          metadata = {
+            ...metadata,
+            record_length: durationInSeconds
+          };
+          console.log('Audio duration:', durationInSeconds);
+        }
+      }
+
+
+      console.log('manager - uploadFile', file.originalname, metadata);
+
+      // Proceed with uploading to Minio with the file and its metadata
       const minioResult = await MinioRepository.uploadFile(
         mainId,
         subtypeId,
         modelId,
         fileType,
         file,
-        metadata,
+        metadata
       );
+
       console.log('manager - uploadFile result', minioResult);
       if (!minioResult) {
         throw new Error('Error uploading file');
       }
+
       return minioResult;
     } catch (error: any) {
       console.error('Manager Error [uploadFile]:', error.message);
