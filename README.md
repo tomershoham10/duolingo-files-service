@@ -1,6 +1,7 @@
 # Files Service
 
 The **Files Service** is a microservice designed to handle file uploads, storage, and retrieval for the Duolingo-inspired sonar training platform.
+
 ---
 
 ## 🚀 Features
